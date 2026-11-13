@@ -1,0 +1,41 @@
+/* On phones the same continuous document becomes a legible full-size stage screen. */
+.mobile-readers{display:none}
+@media(max-width:650px){
+ .mobile-readers{display:block;pointer-events:none;position:fixed;inset:0;z-index:8}
+ .mobile-reader{display:none;pointer-events:auto;position:fixed;top:62px;bottom:142px;left:10px;right:10px;flex-direction:column;background:#526c9f;border:5px solid #c0d5e6;box-shadow:inset 5px 5px #d9e6ff,inset -6px -6px #253b75,7px 8px 0 #081329}
+ body.is-focus-mode .mobile-reader.is-current{display:flex}
+ .mobile-reader-head{flex:0 0 38px;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0 11px;color:#ffd887;background:#202e50;font:900 10px/1 'Courier New',monospace;letter-spacing:.8px}
+ .mobile-reader-head span{font-size:8px;color:#c2d0ed}
+ .mobile-reader-scroll{flex:1;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;scrollbar-color:#f4b34c #253d68;scrollbar-width:thin;background:#b0c3df}
+ .mobile-reader-scroll .board-document{width:100%;min-height:100%;height:auto;padding:14px 14px 25px;border:3px solid #3d4f97}
+ .mobile-reader-scroll .doc-bar{font-size:10px;padding-bottom:9px;border-bottom-width:3px}
+ .mobile-reader-scroll .doc-bar span{padding:8px}
+ .mobile-reader-scroll .doc-bar small{font-size:8px;line-height:1.3;text-align:right}
+ .mobile-reader-scroll .doc-heading{padding:18px 0 22px}
+ .mobile-reader-scroll .doc-heading>span{font-size:10px;line-height:1.35;padding:7px 9px}
+ .mobile-reader-scroll .doc-heading h1{font-size:clamp(26px,8vw,37px);margin:16px 0 7px;letter-spacing:-.5px}
+ .mobile-reader-scroll .doc-en{font-size:18px;margin-bottom:12px}
+ .mobile-reader-scroll .doc-affiliation{font-size:15px;line-height:1.45;padding-left:9px;border-left-width:4px}
+ .mobile-reader-scroll .doc-lead{font-size:16px;line-height:1.65}
+ .mobile-reader-scroll .doc-chips{gap:6px;margin:12px 0 20px}
+ .mobile-reader-scroll .doc-chip{font-size:12px;padding:7px 8px;border-width:1px;box-shadow:2px 2px #8ca1c7}
+ .mobile-reader-scroll .doc-section{padding:16px 14px 20px;margin:17px 0 23px;border-width:2px}
+ .mobile-reader-scroll .doc-section h2{font-size:21px;padding-bottom:10px;margin-bottom:12px;border-bottom-width:2px}
+ .mobile-reader-scroll .doc-section h3{font-size:17px;margin:16px 0 6px}
+ .mobile-reader-scroll .doc-section p{font-size:15px;line-height:1.65;margin:10px 0}
+ .mobile-reader-scroll .doc-emphasis{font-size:19px!important}
+ .mobile-reader-scroll .doc-link{font-size:12px;gap:9px;padding:8px 10px;margin:5px 5px 5px 0;box-shadow:2px 2px #354974}
+ .mobile-reader-scroll .doc-links{grid-template-columns:1fr;gap:4px}
+ .mobile-reader-scroll .doc-links .doc-link{min-height:40px;margin:4px}
+ .mobile-reader-scroll .doc-type{font-size:10px;padding:6px 8px}
+ .mobile-reader-scroll .doc-entry{grid-template-columns:83px minmax(0,1fr);gap:9px;padding:10px 8px;min-height:48px;border-left-width:4px}
+ .mobile-reader-scroll .doc-entry time{font-size:11px;line-height:1.4}
+ .mobile-reader-scroll .doc-entry strong{font-size:13px}
+ .mobile-reader-scroll .doc-entry small{font-size:11px}
+ .mobile-reader-scroll .doc-entries{gap:7px}
+ .mobile-reader-scroll .doc-note{font-size:12px;padding:11px 13px;margin:15px 0}
+ .mobile-reader-scroll .doc-note p{font-size:14px}
+ .mobile-reader-scroll .doc-footer{font-size:9px;line-height:1.5;letter-spacing:0;border-top-width:3px;padding-top:17px}
+ .mobile-reader-scroll a:focus-visible{outline:3px solid #f68d1f}
+ body.is-focus-mode .css3d-viewport{filter:brightness(.45)}
+}

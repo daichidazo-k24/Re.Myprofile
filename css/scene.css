@@ -1,0 +1,40 @@
+.native-card{position:relative}
+/* 3D DOM scene fallback when the browser blocks WebGL altogether. */
+.css3d-viewport{position:fixed;inset:0;z-index:1;overflow:hidden;perspective:1120px;background:radial-gradient(ellipse at 49% 37%,#324e83 0,#172a4b 31%,#091326 71%,#060d1c 100%);pointer-events:none}.css3d-viewport:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 76px,rgba(121,164,226,.055) 77px 78px),repeating-linear-gradient(0deg,transparent 0 76px,rgba(121,164,226,.055) 77px 78px);transform:perspective(600px) rotateX(72deg) scale(1.6);transform-origin:center 100%;top:28%;opacity:.8}.css3d-world{position:absolute;left:50%;top:41%;width:0;height:0;transform-style:preserve-3d;will-change:transform}.css3d-stage{position:absolute;width:720px;height:465px;left:-360px;top:-233px;transform-style:preserve-3d;pointer-events:none}.css3d-back{position:absolute;left:9px;top:0;width:700px;height:430px;transform:translateZ(-60px);background:#15243f;border:10px solid #5c74aa;box-shadow:inset 8px 8px #9aafdd,inset -9px -9px #2d3a73,16px 18px 0 #081325,20px 25px 45px #0008}.css3d-frame{position:absolute;left:14px;top:0;width:692px;height:426px;padding:12px;background:#52679b;border:5px solid #9bb4dc;box-shadow:inset 5px 5px #c0d5e6,inset -6px -6px #26386d,14px 14px 0 #14203d;transform:translateZ(26px) rotateY(-2deg);transform-style:preserve-3d}.css3d-frame .card-cut{width:656px;height:382px;overflow:hidden;border:5px solid #222d60;background:#a4b7e4}.css3d-frame .native-card{transform:scale(.674);transform-origin:0 0}.css3d-frame .corner-led{position:absolute;width:45px;height:13px;background:#f68d1f;border:3px solid #ffc880;top:-10px;left:20px;box-shadow:4px 4px 0 #273e79}.css3d-stage .sprite-podium{position:absolute;left:-205px;top:240px;width:170px;height:57px;transform:translateZ(165px) rotateY(-5deg);background:#354b80;border:8px solid #93a9d0;box-shadow:11px 12px 0 #172644,0 30px 35px #071226}.css3d-stage .sprite-podium:after{content:'';position:absolute;inset:5px 22px 12px;background:#f68d1f;border:4px solid #d2a968}.css3d-stage .css-miner{position:absolute;left:-217px;top:35px;width:190px;height:auto;image-rendering:pixelated;filter:drop-shadow(9px 9px 0 #142345);transform:translateZ(195px);animation:miner-idle 1.2s steps(2,end) infinite}.css3d-stage .block-stack{position:absolute;left:716px;top:270px;transform:translateZ(120px);display:grid;grid-template-columns:repeat(2,63px);grid-auto-rows:63px;gap:5px;transform-style:preserve-3d}.css3d-stage .voxel{width:62px;height:62px;background:#53689b;border:5px solid #819aca;box-shadow:inset 4px 4px #adbee4,inset -5px -5px #233864,8px 8px 0 #0c1933;transform:translateZ(var(--d,0px));animation:voxel-float 3s ease-in-out infinite alternate;animation-delay:var(--delay,0s)}.css3d-stage .voxel:nth-child(3n){background:#ee9e40;border-color:#ffcc83}.css3d-stage .voxel:nth-child(4n){background:#4866a3}.css3d-stage .stage-plinth{position:absolute;left:245px;top:422px;width:360px;height:45px;background:#263f73;border:7px solid #718abb;box-shadow:0 12px 0 #121d3b,0 18px 35px #000a;transform:translateZ(-40px) rotateX(16deg)}.css3d-stage .board-popup-title::after{content:"";position:absolute;left:50%;transform:translateX(-50%);bottom:-10px;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid #9bb4dc}.css3d-viewport .ambient-dot{position:absolute;display:block;width:5px;height:5px;background:#9acbff;box-shadow:0 0 15px #8bc4ff;opacity:.7;animation:voxel-float 2s ease-in-out infinite alternate;pointer-events:none}@keyframes voxel-float{to{translate:0 -11px}}@keyframes miner-idle{to{translate:0 -4px}}
+@media(max-width:800px){.css3d-viewport{perspective:880px}.css3d-stage .css-miner{left:-150px;width:140px}.css3d-stage .sprite-podium{left:-152px;width:130px}.css3d-stage .block-stack{left:730px;transform:translateZ(50px)}}
+@media(prefers-reduced-motion:reduce){.css3d-stage .css-miner,.css3d-stage .voxel,.css3d-viewport .ambient-dot{animation:none}}
+
+.css3d-stage:not(.is-miner-active) .css-miner{display:none}
+@media(max-width:800px){.css3d-stage .css-miner{left:540px;top:-72px;width:165px;transform:translateZ(195px)}.css3d-stage .sprite-podium{left:555px;top:183px;width:120px}}
+
+.css3d-frame{pointer-events:auto;cursor:pointer}
+
+
+
+/* The floating sign belongs to the 3D stage, NOT the scrollable whiteboard content. */
+
+@keyframes board-sign-float{to{translate:0 -3px}}
+@media(prefers-reduced-motion:reduce){}
+
+/* Board titles are rendered in a fixed overlay so they stay directly ABOVE the 3D rim. */
+.board-title-layer{position:fixed;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+
+/* This title is attached to the same transform tree and Y-axis as the board.
+   It is intentionally outside .board-scroll-area so scrolling never moves it. */
+.css3d-stage .board-popup-title{
+ position:absolute;left:360px;top:-67px;width:610px;min-height:58px;
+ display:flex;align-items:center;justify-content:center;
+ transform:translateX(-50%) translateZ(29px) rotateY(-2deg);
+ background:rgba(20,33,62,.97);border:4px solid #9bb4dc;
+ box-shadow:0 7px 0 #0b1430,0 0 24px rgba(246,141,31,.22);
+ color:#f5f8ff;letter-spacing:2px;font:900 26px/1.2 'Courier New',monospace;
+ white-space:nowrap;text-shadow:2px 2px 0 #142241;
+ padding:7px 12px;pointer-events:none;backface-visibility:hidden;
+}
+.css3d-stage .board-popup-title::after{
+ bottom:-19px;border-left-width:16px;border-right-width:16px;border-top-width:19px;
+}
+body.is-focus-mode .css3d-stage.is-focus-target .board-popup-title{border-color:#ffd486;color:#ffcf74}
+/* Camera drags must not select the 3D stage titles or underlying world text. */
+.css3d-stage .board-popup-title{user-select:none;-webkit-user-select:none}
+body:not(.is-focus-mode) .css3d-viewport{user-select:none;-webkit-user-select:none}

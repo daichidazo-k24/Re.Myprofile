@@ -1,0 +1,41 @@
+/* Focus / stage-view mode */
+.top-hud,.vertical-story,.side-action,.screen-grain,.vignette,.bottom-hud,.chapter-dock{transition:opacity .35s ease, transform .35s ease, filter .35s ease}
+.focus-btn{background:#24355b;border-color:#f2bf63;color:#ffda81}
+.focus-btn[aria-pressed="true"]{background:linear-gradient(180deg,#f7b24b,#ef8f17);color:#18233c;border-color:#ffd48d;box-shadow:inset 2px 2px #ffe6b0,inset -2px -2px #a15407}
+body.is-focus-mode .side-action,body.is-focus-mode .vertical-story{opacity:0;transform:translateY(12px);pointer-events:none}
+body.is-focus-mode .top-hud{opacity:.2;filter:saturate(.7)}
+body.is-focus-mode .bottom-hud{opacity:.92}
+body.is-focus-mode .controller-hint{opacity:.35}
+body.is-focus-mode .chapter-dock{opacity:0;visibility:hidden;pointer-events:none;transform:translateX(-50%) translateY(18px)}
+body.is-focus-mode .screen-grain{opacity:.12}
+body.is-focus-mode .vignette{background:radial-gradient(ellipse at 50% 40%,transparent 22%,rgba(1,4,14,.66) 100%)}
+body.is-focus-mode .notification{opacity:0!important}
+.chapter-dock::before{content:"STAGE SELECT";position:absolute;left:14px;top:-20px;color:#ffd079;font:900 10px "Courier New",monospace;letter-spacing:2px;text-shadow:2px 2px 0 #0c1428;opacity:.92}
+
+body.is-focus-mode .css3d-stage{opacity:.22;filter:blur(1.5px) saturate(.75);transition:transform .45s ease,opacity .35s ease,filter .35s ease}
+body.is-focus-mode .css3d-stage.is-focus-target{opacity:1;filter:none;z-index:3}
+body.is-focus-mode .css3d-stage.is-focus-target .css3d-frame{box-shadow:inset 5px 5px #c0d5e6,inset -6px -6px #26386d,0 0 0 3px rgba(255,208,112,.5),20px 18px 0 #14203d,0 0 50px rgba(246,141,31,.26)}
+body.is-focus-mode .css3d-stage.is-focus-target .stage-label{color:#ffcf74}
+body.is-focus-mode .css3d-stage.is-focus-target .css-miner{display:none}
+body.is-focus-mode .css3d-stage.is-focus-target .sprite-podium{display:none}
+body.is-focus-mode .css3d-stage.is-focus-target .block-stack{opacity:.25}
+@media(max-width:800px){body.is-focus-mode .top-hud{opacity:.1} .chapter-dock::before{left:10px;top:-17px;font-size:8px}}
+
+/* The old STAGE INDEX overlay has been removed; the board itself owns progress. */
+.hud-links{display:none;gap:8px;align-items:center;min-width:0;max-width:min(44vw,550px);overflow-x:auto;scrollbar-width:thin;scrollbar-color:#f4b34c #253d68}
+.hud-links a{display:inline-flex;align-items:center;flex:0 0 auto;max-width:240px;text-decoration:none;white-space:nowrap;color:#18243e;background:#edac4d;border:1px solid #ffe09e;box-shadow:2px 2px 0 #050b18;padding:7px 10px;font:900 10px/1.2 'Courier New',monospace}
+.hud-links a:hover{background:#ffd081}
+body.is-focus-mode .hud-links{display:flex}
+body.is-focus-mode .controller-hint{display:none}
+body.is-focus-mode .side-action{pointer-events:none}
+@media(max-width:800px){.bottom-hud{left:10px;right:10px;gap:7px}.hud-links{max-width:calc(100vw - 245px)}.hud-links a{padding:7px 6px;font-size:9px}.bottom-hud .right-ctl{gap:5px}.bottom-hud .right-ctl .small-btn{font-size:9px;padding:7px 6px}}
+@media(max-width:430px){.controller-hint{display:none}.bottom-hud{justify-content:space-between}.bottom-hud .right-ctl .small-btn{font-size:8px}.hud-links{max-width:calc(100vw - 206px)}.hud-links a{font-size:8px;padding:6px 5px}}
+
+/* The stage menu belongs to WORLD VIEW only. Focused boards stay fully unobstructed. */
+.chapter-dock{transition:opacity .26s ease, transform .26s ease, visibility .26s ease}
+body.is-focus-mode .chapter-dock{opacity:0;visibility:hidden;pointer-events:none;transform:translateX(-50%) translateY(18px)}
+@media (prefers-reduced-motion: reduce){.chapter-dock{transition:none}}
+
+/* Bottom-left hint removed; keep navigation controls on the right. */
+.bottom-hud{justify-content:flex-end}
+body.is-focus-mode .bottom-hud{justify-content:space-between}

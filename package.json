@@ -1,0 +1,12 @@
+{
+  "name": "daichi-portfolio-world",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Static 3D portfolio for GitHub Pages; editable stage content and local fishing gallery",
+  "scripts": {
+    "dev": "node tools/dev-server.mjs",
+    "test": "node --test",
+    "preview:build": "python tools/build_standalone.py"
+  }
+}

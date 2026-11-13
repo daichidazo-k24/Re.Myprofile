@@ -1,0 +1,4 @@
+let enabled=false,context=null;
+export function setSound(value){enabled=!!value;document.getElementById('soundBtn').setAttribute('aria-pressed',String(enabled));document.getElementById('soundBtn').textContent=enabled?'♪ ON':'♪ OFF';return enabled}
+export function toggleSound(){return setSound(!enabled)}
+export function beep(freq=210,seconds=.06){if(!enabled)return;try{context??=new(window.AudioContext||window.webkitAudioContext)();if(context.state==='suspended')context.resume();const osc=context.createOscillator(),gain=context.createGain();osc.type='square';osc.frequency.setValueAtTime(freq,context.currentTime);osc.frequency.exponentialRampToValueAtTime(Math.max(40,freq*.55),context.currentTime+seconds);gain.gain.setValueAtTime(.025,context.currentTime);gain.gain.exponentialRampToValueAtTime(.001,context.currentTime+seconds);osc.connect(gain).connect(context.destination);osc.start();osc.stop(context.currentTime+seconds)}catch{}}

@@ -1,0 +1,13 @@
+/* Browser-native HTML-in-Canvas: the HTML is inside the SAME WebGL canvas.
+   These children are drawable paint roots, NOT positioned overlays. */
+#worldCanvas[content="drawable"] .hic-board-viewport{
+ position:absolute;left:0;top:0;width:960px;height:560px;
+ overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;
+ background:#b6c8e8;scrollbar-width:none;
+ contain:layout style;box-sizing:border-box;
+}
+#worldCanvas[content="drawable"] .hic-board-viewport::-webkit-scrollbar{display:none}
+#worldCanvas[content="drawable"] .hic-board-viewport .board-document{
+ width:960px;max-width:none;min-height:560px;
+}
+/* Keep the existing CSS3D presentation as a progressive fallback only. */

@@ -1,0 +1,159 @@
+/* STAGE 06: off-island fishing event and the separate caught-photo panel. */
+.fishing-cast-hotspot[hidden]{display:none!important}
+.fishing-cast-hotspot{position:fixed;z-index:16;display:flex;align-items:center;flex-direction:column;gap:5px;min-width:181px;transform:translate(-50%,-50%);padding:10px 13px;background:#182c4eea;border:2px solid #ffd481;box-shadow:5px 6px 0 #071021,0 0 35px #d78d3566;color:#fff;font:900 12px/1.4 'Courier New',monospace;letter-spacing:.5px;text-align:center;cursor:pointer;animation:cast-bob 2.2s steps(4,end) infinite}
+.fishing-cast-hotspot:before{content:'';position:absolute;left:50%;top:-29px;height:29px;width:2px;background:#fff3ba;box-shadow:0 0 9px #ffde85;pointer-events:none}
+.fishing-cast-hotspot:hover,.fishing-cast-hotspot:focus-visible{color:#111d39;background:#ffbd51;box-shadow:5px 6px 0 #071021,0 0 42px #ffc25388;animation-play-state:paused}
+.fish-reticle{color:#ffd77d;font-size:26px;line-height:1}.fishing-cast-hotspot small{font-size:8px;letter-spacing:1.2px;color:#a9c2ea}.fishing-cast-hotspot:hover small{color:#273d66}
+.fishing-cast-hotspot:disabled{opacity:.8;cursor:wait}
+@keyframes cast-bob{0%,100%{transform:translate(-50%,-50%) translateY(0)}50%{transform:translate(-50%,-50%) translateY(-10px)}}
+.fishing-gallery-dialog{position:fixed;inset:0;margin:auto;width:min(820px,calc(100% - 26px));max-width:820px;height:auto;max-height:min(88vh,780px);padding:0;border:5px solid #c0d5e6;outline:2px solid #384c86;overflow:hidden;background:#9fbee7;color:#21242e;box-shadow:12px 16px 0 #090f25,0 0 100px #f7bd6270;transform:translateY(110vh) rotate(-9deg) scale(.8);opacity:0;transition:transform .85s cubic-bezier(.18,.91,.18,1.16),opacity .28s ease}
+.fishing-gallery-dialog::backdrop{background:#050b19cc;backdrop-filter:blur(5px)}
+.fishing-gallery-dialog.is-caught{transform:translateY(0) rotate(0) scale(1);opacity:1}
+.fishing-gallery-dialog:not([open]){display:none}
+.fishing-gallery-shell{display:flex;flex-direction:column;max-height:calc(min(88vh,780px) - 10px);background:#9fbee7;min-height:0;overflow:hidden}
+.gallery-masthead{position:relative;display:flex;align-items:center;gap:12px;padding:20px 24px 14px;text-align:center;border-bottom:3px solid #708bb8;margin:0 14px;flex-shrink:0}
+.gallery-masthead>div{flex:1}.gallery-icon{font-size:35px;filter:drop-shadow(3px 3px #3c5797)}.gallery-mini-label{display:block;font:900 11px 'Courier New',monospace;letter-spacing:2px;color:#3d4f97}
+.gallery-masthead h2{margin:5px 0;font:900 clamp(23px,4vw,32px)/1 Arial, sans-serif;color:#122444;text-shadow:2px 2px 0 #cde0ff}
+.gallery-masthead p{font:700 12px/1.5 Arial,sans-serif;color:#354a78;margin:7px 0 0}.gallery-close{position:absolute;right:0;top:9px;background:#f68d1f;color:#14243e;border:3px solid #ffd28a;box-shadow:3px 3px #3d4f97;font:900 30px/1 Arial;width:41px;height:41px}
+.gallery-photogrid{overflow:auto;overscroll-behavior:contain;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:12px 15px 20px;min-height:0;flex:1;align-content:start;scrollbar-color:#f6a33b #5778b1}
+.gallery-photo{display:block;border:3px solid #273a72;background:#172644;box-shadow:2px 2px #5474a8;padding:0;aspect-ratio:1;min-width:0;overflow:hidden;transition:border-color .15s,transform .15s}
+.gallery-photo img{width:100%;height:100%;object-fit:cover;image-rendering:auto;display:block}
+.gallery-photo:hover,.gallery-photo:focus-visible{transform:translateY(-3px);border-color:#f68d1f;box-shadow:2px 4px #4c5d84}
+.gallery-footer{display:flex;gap:10px;align-items:center;justify-content:center;padding:12px 16px;background:#7b95c1;border-top:3px solid #405b9b;flex-shrink:0;font:900 10px 'Courier New',monospace}
+.gallery-footer span{margin-right:auto;color:#283b66}.gallery-footer a,.gallery-footer button{padding:9px 12px;color:#142342;text-decoration:none;background:#ecab37;border:2px solid #fff1c2;box-shadow:3px 3px #374f86;font:900 11px Arial,sans-serif}
+.gallery-footer button{background:#21242e;color:#fff;border-color:#9fb6d6}
+.fishing-photo-viewer{position:fixed;inset:0;margin:auto;width:min(850px,95vw);max-height:95vh;padding:20px 20px 12px;background:#172541;border:4px solid #c0d5e6;color:#fff;box-shadow:10px 12px #050914;text-align:center}
+.fishing-photo-viewer::backdrop{background:#060a17ed}.viewer-image-wrap{display:flex;align-items:center;justify-content:center;max-height:calc(95vh - 100px)}.fishing-photo-viewer img{display:block;max-width:100%;max-height:calc(95vh - 120px);object-fit:contain}.fishing-photo-viewer p{margin:10px;font:900 12px 'Courier New',monospace}.viewer-close{position:absolute;right:8px;top:8px;background:#f68d1f;border:3px solid #fff;font:bold 27px Arial;width:42px;height:42px}
+/* Side of the final island. The suspended line is OVER THE VOID (not the board). */
+.fishing-css-stage .fishing-css-scene{position:absolute;left:-28px;top:-35px;width:790px;height:550px;transform-style:preserve-3d;pointer-events:none}
+.fishing-css-stage .fish-abyss{position:absolute;left:435px;top:155px;width:400px;height:360px;transform:translateZ(-150px);background:radial-gradient(ellipse at 28% 0%,#24457655,transparent 72%);border-left:2px dashed #627da355}
+.fishing-css-stage .fish-abyss:after{content:'THE VOID  /  OUTSIDE THE ISLAND';position:absolute;left:28px;bottom:21px;font:900 11px 'Courier New',monospace;letter-spacing:2px;color:#739ac6;opacity:.65}
+.fishing-css-stage .fish-cliff{position:absolute;left:-110px;top:306px;width:390px;height:230px;background:repeating-linear-gradient(90deg,#3b517f 0 62px,#516594 62px 124px);border:12px solid #8096c9;transform:translateZ(-110px) skewY(-7deg);box-shadow:30px 30px #0e1b36,70px 70px #0a152d}
+.fishing-css-stage .fish-platform{position:absolute;top:286px;left:-92px;width:520px;height:115px;background:repeating-linear-gradient(90deg,#b49b73 0 64px,#d0b78d 64px 124px);border:9px solid #657fac;transform:translateZ(5px) rotateX(63deg) rotateZ(-3deg);box-shadow:12px 12px #1b2c51,20px 40px #0a172d}
+.fishing-css-stage .fish-platform:after{content:'STAGE BORDER';position:absolute;right:13px;bottom:7px;color:#2c3455;font:900 14px 'Courier New',monospace}
+.fishing-css-stage .fish-rod{position:absolute;left:342px;top:120px;width:14px;height:245px;background:linear-gradient(90deg,#f8dda2 0 4px,#b97738 4px 12px,#3e3857 12px);border:2px solid #fff0b4;transform-origin:bottom;transform:translateZ(55px) rotate(43deg);box-shadow:4px 4px #0a1429}
+.fishing-css-stage .fish-line{position:absolute;left:514px;top:82px;width:2px;height:289px;background:#d8e8ff;transform:translateZ(100px);box-shadow:0 0 13px #c2ddff}
+.fishing-css-stage .fish-bob{position:absolute;left:496px;top:361px;width:38px;height:38px;border:5px solid #ffe8a7;background:#ed8b24;transform:translateZ(106px);box-shadow:6px 6px #142442;animation:fishing-bob 2s steps(3,end) infinite}
+.fishing-css-stage .fish-anchor{position:absolute;left:516px;top:368px;width:8px;height:8px;transform:translateZ(115px)}
+.fishing-css-stage .fish-pixel-stars{position:absolute;left:600px;top:200px;width:13px;height:13px;box-shadow:32px 100px #5677a8,80px 38px #f6b44d,123px 184px #5677a8,159px 25px #92b6d5,13px 213px #f4aa47;opacity:.75}
+.fishing-css-stage .fishing-island-marker{position:absolute;left:0;top:-15px;font:900 12px 'Courier New',monospace;color:#ffcd77;letter-spacing:2px;text-shadow:2px 3px #0b1630}
+@keyframes fishing-bob{50%{transform:translateZ(106px) translateY(-9px)}}
+body.fishing-reeling .fishing-css-stage .fish-bob{animation:fish-pull 1.3s ease-in forwards}body.fishing-reeling .fishing-css-stage .fish-line{animation:fish-line-pull 1.3s ease-in forwards}
+@keyframes fish-pull{to{transform:translateZ(106px) translateY(-210px)}}
+@keyframes fish-line-pull{to{height:80px}}
+.fishing-css-stage{pointer-events:none}
+body.on-fishing-stage #focusBtn{border-color:#ffcf75;color:#ffda85}
+body.on-fishing-stage .chapter:last-child{border-color:#f2ad3f;color:#ffcf8c}
+@media(max-width:800px){.fishing-cast-hotspot{min-width:138px;padding:9px 8px;font-size:10px}.fishing-cast-hotspot small{font-size:7px}.gallery-masthead{padding:12px 10px 10px}.gallery-icon{font-size:25px}.gallery-masthead p{font-size:10px}.gallery-mini-label{font-size:9px}.gallery-photogrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:9px}.gallery-footer{flex-wrap:wrap}.gallery-footer span{display:none}.fishing-gallery-dialog{max-height:86vh}}
+@media(max-width:460px){.gallery-photogrid{grid-template-columns:repeat(3,minmax(0,1fr))}.gallery-masthead h2{font-size:23px}.gallery-masthead{margin:0 8px}.gallery-footer a,.gallery-footer button{font-size:9px;padding:8px}.fishing-gallery-shell{max-height:calc(86vh - 10px)}.fishing-gallery-dialog{width:calc(100% - 16px);max-height:86vh}.fishing-cast-hotspot{min-width:110px}.chapter{min-width:0!important;padding:9px 4px!important;font-size:8px!important;letter-spacing:.3px!important}.chapter-index{font-size:8px!important}}
+@media(prefers-reduced-motion:reduce){.fishing-cast-hotspot,.fishing-css-stage .fish-bob{animation:none}.fishing-gallery-dialog{transition:none!important}}
+/* Refine the desktop fishing rig so the pole and hanging line fit inside the scene. */
+.side-action[hidden]{display:none!important}
+.fishing-css-stage .fish-rod{left:345px;top:215px;height:156px;width:12px;transform:translateZ(32px) rotate(41deg)}
+.fishing-css-stage .fish-line{left:451px;top:119px;height:212px;transform:translateZ(56px)}
+.fishing-css-stage .fish-bob{left:435px;top:316px;transform:translateZ(60px)}
+.fishing-css-stage .fish-anchor{left:453px;top:327px;transform:translateZ(64px)}
+@keyframes fishing-bob{50%{transform:translateZ(60px) translateY(-9px)}}
+@keyframes fish-pull{to{transform:translateZ(60px) translateY(-165px)}}
+@keyframes fish-line-pull{to{height:55px}}
+.fishing-css-stage .fish-line{top:205px;height:86px}
+.fishing-mobile-rig{display:none;position:fixed;z-index:5;pointer-events:none;left:calc(var(--fishing-hook-x,210px) - 198px);top:calc(var(--fishing-hook-y,350px) - 208px);width:260px;height:230px;filter:drop-shadow(4px 5px #091329)}
+@media(max-width:650px){body.on-fishing-stage .fishing-mobile-rig{display:block}}
+body.fishing-reeling .fishing-mobile-rig .mobile-rig-line{stroke-dasharray:15 9;animation:fish-reel-line 300ms linear infinite}
+@keyframes fish-reel-line{to{stroke-dashoffset:24}}
+@media(prefers-reduced-motion:reduce){body.fishing-reeling .fishing-mobile-rig .mobile-rig-line{animation:none}}
+
+/* A single connected rod SVG replaces the three disconnected CSS rods/line/bob.
+   It lives inside the existing 3D fishing stage, not on a separate screen. */
+.fishing-css-stage .fish-rig-svg{position:absolute;left:0;top:0;width:720px;height:465px;
+ overflow:visible;transform:translateZ(80px);pointer-events:none;filter:drop-shadow(4px 5px 0 #091329)}
+.fishing-css-stage .fish-anchor{left:516px;top:345px;transform:translateZ(92px)}
+body.fishing-reeling .fishing-css-stage .fish-svg-line{animation:connected-line-reel 1.3s ease-in forwards;transform-box:view-box;transform-origin:520px 220px}
+body.fishing-reeling .fishing-css-stage .fish-svg-bob{animation:connected-bob-reel 1.3s ease-in forwards}
+@keyframes connected-line-reel{to{transform:scaleY(.30)}}
+@keyframes connected-bob-reel{to{transform:translateY(-95px)}}
+@media(prefers-reduced-motion:reduce){body.fishing-reeling .fishing-css-stage .fish-svg-line,body.fishing-reeling .fishing-css-stage .fish-svg-bob{animation:none}}
+
+/* CSS3D fallback uses the screen-projected hook as the rig anchor.
+   This connected SVG avoids browser 3D SVG clipping of the rod tip/line. */
+body.css3d-renderer.on-fishing-stage .fishing-mobile-rig{display:block}
+body.css3d-renderer .fishing-css-stage .fish-rig-svg{display:none}
+
+
+/* Fishing Gallery: single, independently scrolling photo collection.
+ * The gallery header/footer stay in place; every image has its own grid cell.
+ * Large photos use object-fit: contain so none are cropped or stacked. */
+.fishing-gallery-dialog {
+  width:min(1000px, calc(100vw - 32px));
+  max-width:1000px;
+  height:min(88dvh, 850px);
+  max-height:calc(100dvh - 20px);
+}
+.fishing-gallery-shell {height:100%;max-height:none;min-height:0;}
+.fishing-gallery-dialog .gallery-photogrid {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  grid-auto-flow:row;
+  grid-auto-rows:max-content;
+  align-content:start;
+  gap:16px;
+  padding:20px 22px 24px;
+  min-width:0;min-height:0;flex:1 1 auto;
+  overflow-y:auto;overflow-x:hidden;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+  scrollbar-color:#f6a33b #5778b1;
+  scroll-behavior:auto;
+}
+.fishing-gallery-dialog .gallery-photo {
+  display:flex;flex-direction:column;
+  align-items:stretch;justify-content:space-between;
+  width:100%;height:auto;aspect-ratio:auto;
+  min-width:0;overflow:hidden;
+  border:3px solid #273a72;
+  background:#172644;
+  padding:7px;
+  transform:none;
+  box-shadow:3px 4px 0 #5474a8;
+}
+.fishing-gallery-dialog .gallery-photo img{
+  display:block;width:100%;height:auto;aspect-ratio:4/3;
+  object-fit:contain;object-position:center;
+  background:#0c152b;
+}
+.fishing-gallery-dialog .gallery-photo-number{
+  display:block;text-align:left;padding:9px 3px 3px;
+  font:900 11px/1.2 'Courier New',monospace;
+  color:#dbe6fa;letter-spacing:1.4px;
+}
+.fishing-gallery-dialog .gallery-photo:hover,
+.fishing-gallery-dialog .gallery-photo:focus-visible{
+  transform:none;border-color:#f68d1f;
+  box-shadow:3px 4px 0 #4c5d84,0 0 0 2px #f68d1f66;
+}
+.fishing-gallery-dialog .gallery-footer{position:relative;z-index:1}
+@media(max-width:800px){
+ .fishing-gallery-dialog .gallery-photogrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:14px 16px 18px}
+}
+@media(max-width:460px){
+ .fishing-gallery-dialog{width:calc(100vw - 16px);height:88dvh;max-height:calc(100dvh - 12px)}
+ .fishing-gallery-dialog .gallery-photogrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:12px}
+ .fishing-gallery-dialog .gallery-photo{padding:5px}
+ .fishing-gallery-dialog .gallery-photo-number{font-size:9px;padding:7px 1px 2px}
+}
+
+.gallery-scroll-hint{display:block;margin-top:9px;color:#2d4c7b;font:900 10px/1.2 'Courier New',monospace;letter-spacing:1.6px}
+@media(max-width:460px){.gallery-scroll-hint{font-size:8px;letter-spacing:.8px;margin-top:5px}}
+
+/* No outgoing legacy-gallery link: footer consists only of count + return action. */
+.fishing-gallery-dialog .gallery-footer{justify-content:space-between}
+
+/* Photos are supplied by the site owner after extracting the repository ZIP. */
+.fishing-gallery-dialog .gallery-photo.is-missing-photo{cursor:default;opacity:1}
+.fishing-gallery-dialog .gallery-photo.is-missing-photo img{display:none}
+.fishing-gallery-dialog .gallery-photo.is-missing-photo::before{
+  content:'PHOTO NOT ADDED';display:flex;align-items:center;justify-content:center;
+  aspect-ratio:4/3;min-height:80px;padding:10px;box-sizing:border-box;
+  background:#0c152b;color:#b8cbe4;letter-spacing:1px;text-align:center;
+  font:700 11px/1.7 'Courier New',monospace
+}

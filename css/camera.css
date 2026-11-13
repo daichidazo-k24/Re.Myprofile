@@ -1,0 +1,15 @@
+/* Compact optional camera pad; all primary orbit controls also work without UI. */
+.camera-controls-root{position:fixed;right:22px;top:22px;z-index:16;font-family:'Courier New',monospace}
+.camera-toggle{border:2px solid #849ac9;color:#ffdda2;background:#182a4aee;padding:9px 13px;box-shadow:3px 3px 0 #070e20;font:900 12px 'Courier New',monospace;letter-spacing:1px}
+.camera-toggle:hover,.camera-toggle[aria-expanded='true']{background:#314776}
+.camera-pad{display:none;position:absolute;top:44px;right:0;padding:12px;background:#132440f7;border:2px solid #849ac9;box-shadow:5px 5px 0 #050b16;min-width:166px;gap:8px}
+.camera-pad.is-open{display:grid}
+.camera-pad .camera-head{font:900 11px 'Courier New',monospace;color:#ffcf7f;letter-spacing:1px;text-align:center}
+.camera-pad .camera-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.camera-pad button{min-height:34px;background:#253a62;color:#e3edff;border:1px solid #8da8d3;font:900 16px 'Courier New',monospace}
+.camera-pad button:hover,.camera-pad button:focus-visible{background:#eea13a;color:#182644}
+.camera-pad button[data-cam='reset']{grid-column:span 3;font-size:11px}
+.camera-pad .camera-hint{margin:0;color:#a9bedb;font:700 9px/1.5 'Courier New',monospace;max-width:160px}
+body.is-focus-mode .camera-controls-root{opacity:0;pointer-events:none}
+body:not(.world-entered) .camera-controls-root{opacity:0;pointer-events:none}
+@media(max-width:750px){.camera-controls-root{top:59px;right:12px}.camera-toggle{padding:7px 9px;font-size:10px}.camera-pad{top:39px;min-width:149px}}

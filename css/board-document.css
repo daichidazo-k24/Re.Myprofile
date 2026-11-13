@@ -1,0 +1,39 @@
+/* The live board document's layout is determined by its content, never by a fixed slide height. */
+.board-document{box-sizing:border-box;width:960px;min-height:570px;height:auto;padding:35px 48px 55px;background:linear-gradient(150deg,#bec3f0 0%,#8ca6d3 50%,#bbd8ed 100%);font-family:Arial,'Noto Sans JP',sans-serif;color:#202b46;border:10px solid #3d4f97;box-shadow:inset 8px 8px #dfebfc,inset -9px -9px #344b8c}
+.board-document *{box-sizing:border-box}
+.board-document h1,.board-document h2,.board-document h3{overflow-wrap:anywhere}
+.doc-bar{display:flex;align-items:center;gap:10px;border-bottom:5px solid #5974a8;padding-bottom:15px;color:#273d72;font:900 18px 'Courier New',monospace;letter-spacing:1px}
+.doc-bar span{color:#192a47;background:#ed9b3a;padding:9px 12px}
+.doc-bar small{font-size:14px;margin-left:auto;letter-spacing:1px}
+.doc-heading{padding:35px 4px 42px}
+.doc-heading>span{display:inline-block;color:#ffe0a8;background:#243653;font:900 17px 'Courier New',monospace;letter-spacing:1px;padding:10px 13px}
+.doc-heading h1{font:900 60px/1.14 'Arial Black',Arial,sans-serif;margin:24px 0 14px;letter-spacing:-1px}
+.doc-en{font:900 32px Arial,sans-serif;color:#3d4f97;margin:0 0 16px}
+.doc-affiliation{font-weight:900;font-size:23px;line-height:1.5;border-left:7px solid #ecab37;padding-left:15px}
+.doc-lead{font-size:24px;font-weight:800;line-height:1.65;max-width:820px}
+.doc-chips{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0 28px}
+.doc-chip{font-size:20px;font-weight:900;line-height:1.25;padding:10px 15px;background:#f4f7ff;color:#26395f;border:2px solid #536dac;box-shadow:3px 3px 0 #7b8bb9}
+.doc-chip.hot{background:#ecab37;border-color:#e2a14e;color:#1c2a48}
+.doc-section{margin:20px 0 32px;background:rgba(249,252,255,.66);border:3px solid #647fb1;box-shadow:4px 5px 0 #536a9d;padding:26px 30px 34px}
+.doc-section h2{font:900 36px/1.25 'Arial Black',Arial,sans-serif;margin:0 0 22px;border-bottom:4px solid #718cbd;padding-bottom:15px}
+.doc-section h3{font-size:23px;color:#36518b;margin:23px 0 8px}
+.doc-section p{font-size:22px;font-weight:700;line-height:1.7;margin:13px 0}
+.doc-emphasis{font-size:29px!important;font-weight:900!important}
+.doc-link{display:inline-flex;align-items:center;justify-content:space-between;gap:22px;margin:8px 8px 8px 0;max-width:100%;padding:12px 16px;color:#18253c;background:#efad47;border:2px solid #f8d493;box-shadow:4px 4px 0 #354974;font:900 19px/1.25 Arial,'Noto Sans JP',sans-serif;text-decoration:none;overflow-wrap:anywhere}
+.doc-link:hover,.doc-link:focus-visible{background:#ffcf80;transform:translateY(-2px)}
+.doc-link span{white-space:nowrap}
+.doc-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.doc-links .doc-link{display:flex;margin:7px;min-height:66px}
+.doc-type{font:900 18px 'Courier New',monospace;display:inline-block;color:#fff;background:#2d426c;padding:8px 12px}
+.doc-num{color:#e28e27;font-family:'Courier New',monospace}
+.doc-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.doc-entries{display:flex;flex-direction:column;gap:11px}
+.doc-entry{display:grid;grid-template-columns:178px 1fr;gap:16px;align-items:start;background:#f7f8fd;border-left:7px solid #edac4d;padding:15px 19px;min-height:65px}
+.doc-entry:nth-child(even){background:#e2eafa}
+.doc-entry time{color:#37538d;font:900 20px 'Courier New',monospace;white-space:normal;overflow-wrap:anywhere}
+.doc-entry strong{display:block;font-size:21px;line-height:1.45;overflow-wrap:anywhere}
+.doc-entry small{display:block;color:#596b9d;margin-top:4px;font-size:17px;font-weight:800}
+.doc-note{margin:24px 0;padding:17px 22px;background:#27395b;color:#e5eeff;font-weight:800;font-size:19px;line-height:1.5}
+.doc-note p{color:#e5eeff;font-size:22px}
+.doc-footer{border-top:5px solid #617ba7;padding:26px 2px 10px;display:flex;gap:10px;justify-content:space-between;align-items:center;font:900 16px 'Courier New',monospace;letter-spacing:1px;color:#3b5189}
+.doc-footer span{color:#2e4370}

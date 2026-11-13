@@ -1,0 +1,12 @@
+/* The only UI change: live, continuously scrolling HTML inside each 3D screen. */
+.css3d-frame .board-scroll-area{overflow:hidden;overscroll-behavior:contain;scrollbar-color:#f4b34c #253d68;scrollbar-width:none;touch-action:pan-y;cursor:zoom-in;background:#a4b7e4}
+.css3d-frame .board-scroll-area::-webkit-scrollbar{display:none}
+.css3d-frame .board-scroll-sized{position:relative;width:100%;min-height:100%}
+.css3d-frame .board-scroll-sheet{position:absolute;left:0;top:0;width:960px;transform-origin:0 0;transform:scale(.674)}
+body.is-focus-mode .css3d-stage.is-focus-target .board-scroll-area{overflow-y:auto;cursor:auto}
+.css3d-stage:not(.is-focus-target) .board-scroll-sheet{pointer-events:none}
+.css3d-stage .monitor-scroll-track{position:absolute;top:24px;bottom:23px;right:6px;width:5px;background:#1c2b4f;pointer-events:none;opacity:.65}
+.css3d-stage .monitor-scroll-track span{position:absolute;top:0;left:0;right:0;background:linear-gradient(#ffd992,#e8982e);height:20%}
+body.is-focus-mode .css3d-stage.is-focus-target .monitor-scroll-track{opacity:1}
+body.is-focus-mode .css3d-stage.is-focus-target .board-scroll-area:focus-visible{outline:4px solid #f68d1f;outline-offset:-4px}
+body.is-focus-mode .css3d-stage.is-focus-target .css3d-frame{cursor:default}

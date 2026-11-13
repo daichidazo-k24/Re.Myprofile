@@ -1,0 +1,40 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {state} from '../js/state.js';
+import {rotateWorld,zoomWorld,panWorld,resetWorldCamera,worldCameraPose,CAMERA_LIMITS} from '../js/ui/orbit-camera.js';
+import {readFileSync} from 'node:fs';
+const source=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
+test('orbit changes the camera eye around a FIXED target, not the board positions',()=>{
+ resetWorldCamera();
+ const before=worldCameraPose(13.5);rotateWorld(.35,.22);
+ const after=worldCameraPose(13.5);
+ assert.deepEqual(after.target,before.target);
+ assert.notDeepEqual(after.eye,before.eye);
+ const beforeRadius=Math.hypot(...before.eye.map((v,i)=>v-before.target[i]));
+ const afterRadius=Math.hypot(...after.eye.map((v,i)=>v-after.target[i]));
+ assert.ok(Math.abs(beforeRadius-afterRadius)<1e-8);
+ resetWorldCamera();
+});
+test('orbit pitch, yaw, pan and zoom stay within usable 3D viewing bounds',()=>{
+ resetWorldCamera();rotateWorld(999,999);zoomWorld(-99999);panWorld(999,999);
+ assert.equal(state.orbitYaw,CAMERA_LIMITS.yaw);
+ assert.equal(state.orbitPitch,CAMERA_LIMITS.maxPitch);
+ assert.equal(state.orbitDistance,CAMERA_LIMITS.minDistance);
+ assert.equal(state.orbitPanX,CAMERA_LIMITS.maxPan);
+ rotateWorld(-999,-999);zoomWorld(99999);
+ assert.equal(state.orbitYaw,-CAMERA_LIMITS.yaw);
+ assert.equal(state.orbitPitch,CAMERA_LIMITS.minPitch);
+ assert.equal(state.orbitDistance,CAMERA_LIMITS.maxDistance);
+ resetWorldCamera();
+});
+test('both renderers use the camera orbit, title is physically perspective-locked to its board',()=>{
+ const webgl=source('js/scene/webgl.js'),native=source('js/scene/native-html-textures.js');
+ const css3d=source('js/scene/css3d.js'),screenCss=source('css/board-screen.css');
+ assert.match(webgl,/worldCameraPose\(cameraX\)/);
+ assert.match(css3d,/state\.orbitYaw/);assert.match(css3d,/state\.orbitPitch/);
+ assert.match(css3d,/board-popup-title/);
+ assert.match(native,/quadHomography/);
+ assert.match(webgl,/titleTextures\[i\]/);
+ assert.match(webgl,/quad\(x,3\.08\+hover\+2\.49/);
+ assert.doesNotMatch(native,/style\.transform=/);
+});

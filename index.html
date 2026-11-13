@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#111b32" />
+<meta name="description" content="照喜名太智の3D自己紹介サイト。スキル、制作物、学外活動、取得資格、釣果ギャラリーを探索できます。" />
+<title>DAICHI PORTFOLIO WORLD | 照喜名 太智</title>
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/intro.css" />
+<link rel="stylesheet" href="css/scene.css" />
+<link rel="stylesheet" href="css/focus.css" />
+<link rel="stylesheet" href="css/board-document.css" />
+<link rel="stylesheet" href="css/board-screen.css" />
+<link rel="stylesheet" href="css/html-canvas.css" />
+<link rel="stylesheet" href="css/mobile-reader.css" />
+<link rel="stylesheet" href="css/fishing.css" />
+<link rel="stylesheet" href="css/camera.css" />
+</head>
+<body>
+<a class="skip-nav" href="#site-information">3Dアニメーションを飛ばして自己紹介を読む</a>
+<canvas id="worldCanvas" content="drawable" aria-label="3Dポートフォリオ空間。下部のナビゲーションから展示物を切り替えられます。最後のステージでは釣り糸をクリックできます。"></canvas>
+<div class="camera-controls-root" id="cameraControlsRoot">
+ <button class="camera-toggle" type="button" id="cameraToggle" aria-controls="cameraPad" aria-expanded="false">◇ CAMERA</button>
+ <div class="camera-pad" id="cameraPad" aria-label="カメラ視点操作">
+  <div class="camera-head">WORLD CAMERA</div>
+  <div class="camera-grid">
+   <span></span><button type="button" data-cam="up" aria-label="カメラを上方向へ回転">↑</button><span></span>
+   <button type="button" data-cam="left" aria-label="カメラを左へ回転">←</button><button type="button" data-cam="reset" aria-label="視点を初期状態に戻す">RESET</button><button type="button" data-cam="right" aria-label="カメラを右へ回転">→</button>
+   <button type="button" data-cam="minus" aria-label="ズームアウト">−</button><button type="button" data-cam="down" aria-label="カメラを下方向へ回転">↓</button><button type="button" data-cam="plus" aria-label="ズームイン">＋</button>
+  </div>
+  <p class="camera-hint">DRAG / SWIPE: ORBIT<br>TRACKPAD: ORBIT<br>CTRL + WHEEL: ZOOM<br>SHIFT + DRAG: PAN</p>
+ </div>
+</div>
+<div class="screen-grain" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+
+<header class="top-hud">
+ <a href="./" class="logotype" aria-label="DAICHI PORTFOLIO WORLD ホーム"><span class="logo-icon">D</span><span class="logo-title">DAICHI PORTFOLIO WORLD</span></a>
+</header>
+
+
+
+<nav class="chapter-dock" aria-label="3D空間の展示セクション">
+  <button class="chapter is-active" type="button" data-section="0"><span class="chapter-index">01</span><span>PROFILE</span></button>
+  <button class="chapter" type="button" data-section="1"><span class="chapter-index">02</span><span>SKILLS</span></button>
+  <button class="chapter" type="button" data-section="2"><span class="chapter-index">03</span><span>PROJECTS</span></button>
+  <button class="chapter" type="button" data-section="3"><span class="chapter-index">04</span><span>QUEST LOG</span></button>
+  <button class="chapter" type="button" data-section="4"><span class="chapter-index">05</span><span>BADGES</span></button>
+  <button class="chapter" type="button" data-section="5"><span class="chapter-index">06</span><span>FISHING</span></button>
+</nav>
+<div class="bottom-hud">
+ 
+ <nav class="hud-links" id="pageExternalLinks" aria-label="表示中の資料の関連リンク"></nav>
+ <div class="right-ctl"><button type="button" id="focusBtn" class="small-btn focus-btn" aria-pressed="false">◎ STAGE VIEW</button><button type="button" id="soundBtn" class="small-btn" aria-pressed="false">♪ OFF</button><button type="button" id="replayBtn" class="small-btn">↻ REPLAY</button></div>
+</div>
+
+<div class="side-action" id="sideAction" aria-live="polite"><span id="actionCaption">VIEW PLAYER DATA</span><a id="primaryLink" href="https://github.com/daichidazo-k24" target="_blank" rel="noopener noreferrer">OPEN GITHUB ↗</a></div>
+
+<div class="intro-screen" id="introScreen" aria-label="採掘オープニング">
+ <canvas id="rockCanvas" aria-hidden="true"></canvas>
+ <div class="intro-top"><span><b class="orange">●</b> DAICHI QUEST</span><span>LEVEL 01 — THE HIDDEN WORLD</span></div>
+ <div class="intro-center" id="introCenter"><span class="pixel-diamond">◆</span><span>HIDDEN WORLD</span><strong>BREAK THE WALL.</strong><small>YOUR NEXT ADVENTURE IS BEHIND IT.</small></div>
+ <div class="intro-controls"><div><span>EXCAVATION IN PROGRESS</span><div class="mining-meter"><span id="miningFill"></span></div></div><span id="miningPercent">000%</span><button type="button" id="skipIntro">SKIP INTRO ▶</button></div>
+</div>
+
+<div class="notification" id="notification"><b>NEW WORLD UNLOCKED</b><span>DISCOVER THE SIXTH SECRET STAGE</span></div>
+
+<!-- The five live HTML documents are inserted directly as drawable children of #worldCanvas by native-html-textures.js. -->
+
+<main id="site-information" class="accessible-info"><h1>照喜名 太智 — Daichi Terukina</h1><p>サイバーセキュリティを学び、CTFやHardeningなど学外活動とシステム開発に取り組んでいます。</p><a href="https://github.com/daichidazo-k24">GitHubプロフィール</a></main>
+<div class="no-webgl" id="noWebgl" hidden><strong>3D描画を開始できませんでした。</strong><p>WebGL対応ブラウザで開いてください。以下に自己紹介情報を表示します。</p><button type="button" id="showText">本文を表示</button></div>
+<script type="module" src="js/main.js"></script>
+</body></html>
