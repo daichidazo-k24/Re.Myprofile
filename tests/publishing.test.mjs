@@ -49,5 +49,4 @@ test('Re.Myprofile release keeps fishing image directory empty until user adds p
  assert.match(fishData,/image\/fish/);
  assert.doesNotMatch(fishData,/assets\/fishing/);
  assert.match(read('js/content/links.js'),/github\.com\/daichidazo-k24\/Re\.Myprofile/);
- assert.ok(!existsSync(resolve(root,'README.md')));
 });

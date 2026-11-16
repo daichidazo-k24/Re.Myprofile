@@ -8,6 +8,7 @@ import {fishingState} from '../fishing/state.js';
 import {positionFishingHotspot} from '../fishing/ui.js';
 import {minerModel} from './miner-pose.js';
 import {worldCameraPose} from '../ui/orbit-camera.js';
+import {createSkyRenderer} from './sky.js';
 
 export function startWebGL(state,onPageChange){
  const glCanvas=document.getElementById('worldCanvas');
@@ -16,7 +17,7 @@ export function startWebGL(state,onPageChange){
  // can run the WebGL stage. Unsupported browsers use the CSS3D fallback.
  if(!gl||!isNativeHTMLCanvasAvailable(glCanvas,gl))return null;
  let program,cubeMesh,planeMesh,terrainMesh,loc={},whiteTex,minerTex,titleTextures=[],htmlBoards=null;
- let lastTs=0,introZoom=30,running=true;
+ let lastTs=0,introZoom=30,running=true,sky=null;
  const time0=performance.now();
  const vertexShader=`attribute vec3 aPos;attribute vec3 aNorm;attribute vec2 aUv;attribute vec3 aCol;uniform mat4 uModel;uniform mat4 uVP;varying vec2 vUv;varying vec3 vCol;varying float vBright;varying vec3 vPos;void main(){vec4 p=uModel*vec4(aPos,1.);vPos=p.xyz;vUv=aUv;vCol=aCol;vec3 n=normalize(mat3(uModel)*aNorm);vBright=.7+.3*max(0.,dot(n,normalize(vec3(-.25,.82,.6))));gl_Position=uVP*p;}`;
  const fragmentShader=`precision mediump float;varying vec2 vUv;varying vec3 vCol;varying float vBright;varying vec3 vPos;uniform vec4 uColor;uniform sampler2D uTex;uniform float uUseTex;uniform float uUnlit;uniform float uFog;uniform vec3 uEye;void main(){vec4 s=mix(vec4(1.),texture2D(uTex,vUv),uUseTex);if(s.a<.02)discard;vec3 rgb=s.rgb*vCol*uColor.rgb*mix(vBright,1.,uUnlit);float d=length(vPos-uEye);float f=smoothstep(15.,65.,d)*uFog;rgb=mix(rgb,vec3(.025,.065,.14),f);gl_FragColor=vec4(rgb,s.a*uColor.a);}`;
@@ -120,6 +121,7 @@ function drawStageProps(i,t){const x=i*STEP,fx=x+5.5;
   draw(terrainMesh,M.id(),'#ffffff');
   for(let i=0;i<STAGES.length;i++){if(Math.abs(i*STEP-cameraX)>28)continue;if(STAGES[i].id==='fishing'){drawFishingWorld({box},t)}else{board(i,t);drawStageProps(i,t)}}
   for(const [i,p] of floaters.entries()){if(Math.abs(p.offX-cameraX)>19)continue;const y=p.y+Math.sin(t*p.speed+i)*.8;box(p.offX,y,p.z,p.size,p.size,p.size,i%5===0?'#f5a944':'#7f9fc9',t*.12)}
+  sky?.draw(vWorld,state,t,dt,glCanvas.width,glCanvas.height,innerHeight);
   // Sync hit-testing geometry without re-uploading DOM pixels during orbit.
   for(let i=0;i<STAGES.length-1;i++){
    if(Math.abs(i*STEP-cameraX)>28)continue;
@@ -141,13 +143,15 @@ function drawStageProps(i,t){const x=i*STEP,fx=x+5.5;
  }
  try{
   setupGl();
+  // Optional decoration failure must not disable the native HTML-in-Canvas engine.
+  try{sky=createSkyRenderer(gl,state.miningSky)}catch(error){console.warn('Sky effects unavailable:',error)}
   htmlBoards=createNativeBoardTextures(gl,glCanvas);
   document.body.classList.add('native-html-canvas');
   requestAnimationFrame(frame);
   return {type:'webgl',htmlInCanvas:true,depthOcclusion:false,stats:htmlBoards.stats,boards:htmlBoards.roots,
-   destroy(){running=false;htmlBoards?.destroy();document.body.classList.remove('native-html-canvas')}};
+   destroy(){running=false;sky?.destroy();htmlBoards?.destroy();document.body.classList.remove('native-html-canvas')}};
  }catch(error){
   console.error('Native HTML-in-Canvas fallback:',error);
-  htmlBoards?.destroy();return null;
+  sky?.destroy();htmlBoards?.destroy();return null;
  }
 }
