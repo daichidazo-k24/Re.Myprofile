@@ -3,7 +3,8 @@ import {STAGES} from '../data/stages.js';
 import {selectStage,toggleFocus,setFocus} from './navigation.js';
 import {toggleSound} from './audio.js';
 import {scrollBoard,scrollToStart,scrollToEnd} from './board-scroll.js';
-import {castFishingLine,isFishingOverlayActive} from '../fishing/ui.js';
+import {castFishingLine} from '../fishing/ui.js';
+import {isGalleryOverlayActive} from './gallery.js';
 import {rotateWorld,zoomWorld,panWorld,resetWorldCamera} from './orbit-camera.js';
 
 /** World mode: click/drag, touch gestures and trackpad update the actual camera.
@@ -42,7 +43,7 @@ export function bindControls(intro){
  }));
 
  window.addEventListener('keydown',event=>{
-  if(isFishingOverlayActive())return;
+  if(isGalleryOverlayActive())return;
   if(event.key==='Escape'){
    if(state.focused){event.preventDefault();setFocus(false);return}
    closePad();return;
@@ -81,14 +82,14 @@ export function bindControls(intro){
   const [a,b]=[...pointers.values()];return Math.hypot(a.x-b.x,a.y-b.y);
  };
  document.addEventListener('pointerdown',event=>{
-  if(isFishingOverlayActive()||!state.entered||state.focused||ignoreTarget(event.target))return;
+  if(isGalleryOverlayActive()||!state.entered||state.focused||ignoreTarget(event.target))return;
   if(event.pointerType==='mouse'&&event.button!==0)return;
   pointers.set(event.pointerId,{x:event.clientX,y:event.clientY,shift:event.shiftKey});
   gestureMoved=false;pinchDistance=distance();
  },true);
  document.addEventListener('pointermove',event=>{
   if(!pointers.has(event.pointerId))return;
-  if(isFishingOverlayActive()||!state.entered||state.focused){pointers.clear();return}
+  if(isGalleryOverlayActive()||!state.entered||state.focused){pointers.clear();return}
   const previous=pointers.get(event.pointerId),dx=event.clientX-previous.x,dy=event.clientY-previous.y;
   pointers.set(event.pointerId,{x:event.clientX,y:event.clientY,shift:event.shiftKey});
   if(Math.abs(dx)+Math.abs(dy)>.8){gestureMoved=true;justDraggedUntil=performance.now()+250}
@@ -115,7 +116,7 @@ export function bindControls(intro){
  },true);
 
  window.addEventListener('wheel',event=>{
-  if(isFishingOverlayActive()||!state.entered)return;
+  if(isGalleryOverlayActive()||!state.entered)return;
   const node=event.target instanceof Element?event.target:null;
   if(node?.closest('.chapter-dock,.bottom-hud,.top-hud,.camera-controls-root,.fishing-gallery,.fishing-ui'))return;
   // Focus mode scrolls the document; do not steal native wheel or link events.

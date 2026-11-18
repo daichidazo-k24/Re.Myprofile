@@ -90,7 +90,7 @@ test('fishing photo paths are reserved for locally provided images without legac
  assert.equal(FISH_COUNT,30);
  assert.equal(new Set(FISH_IMAGES.map(f=>f.id)).size,30);
  for(const image of FISH_IMAGES){
-  assert.equal(image.src,`image/fish${image.id}.jpg`);
+  assert.equal(image.src,`FishingImage/fish${image.id}.jpg`);
  }
 });
 test('cast, catch and release transitions are exclusive and repeatable',()=>{

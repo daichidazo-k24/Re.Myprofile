@@ -6,6 +6,9 @@ import {seeded} from './math.js';
 import {selectStage,toggleFocus,onNavigate} from '../ui/navigation.js';
 import {registerBoard,scrollToSection} from '../ui/board-scroll.js';
 import {positionFishingHotspot} from '../fishing/ui.js';
+import {GRAPHIC_STAGES} from '../graphic/board.js';
+import {openGraphicGallery} from '../graphic/ui.js';
+import {createNotebookFallback} from '../graphic/notebook.js';
 
 const CSS_SCALE=.674;
 export function startCSS3D(){
@@ -30,6 +33,12 @@ export function startCSS3D(){
   }
   stage.innerHTML=`<div class="css3d-back"></div><div class="board-popup-title" aria-hidden="true">${meta.boardHeading}</div><div class="css3d-frame"><span class="corner-led"></span><div class="card-cut board-scroll-area" tabindex="0" role="region" aria-label="${meta.short} の連続スクロール資料"><div class="board-scroll-sized"><div class="board-scroll-sheet">${renderStageDocument(i)}</div></div></div><span class="monitor-scroll-track" aria-hidden="true"><span></span></span></div><div class="sprite-podium"></div><img class="css-miner" src="${new URL('../../assets/miner.png',import.meta.url).href}" alt=""><div class="block-stack">${Array.from({length:6},(_,j)=>`<div class="voxel" style="--d:${(j%3)*22}px;--delay:${j*.2}s"></div>`).join('')}</div><div class="stage-plinth"></div>`;
   world.appendChild(stage);stages.push(stage);
+  if(i===GRAPHIC_STAGES[0]){
+   const graphic=document.createElement('button');graphic.type='button';graphic.className='css-graphic-board';
+   const artwork=createNotebookFallback();artwork.setAttribute('aria-hidden','true');graphic.appendChild(artwork);
+   graphic.setAttribute('aria-label','グラフィックボードをクリックしてGraphic Galleryを開く');
+   graphic.addEventListener('click',openGraphicGallery);stage.appendChild(graphic);
+  }
   const scroller=stage.querySelector('.board-scroll-area');
   const article=stage.querySelector('.board-document');
   const sized=stage.querySelector('.board-scroll-sized');

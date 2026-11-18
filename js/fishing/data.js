@@ -4,5 +4,6 @@ export const FISH_COUNT = FISHING_CONTENT.imageCount;
 export const FISH_IMAGES = Array.from({length:FISH_COUNT},(_,i)=>({
  id:i+1,
  alt:`${FISHING_CONTENT.photoLabel} ${i+1}`,
- src:`image/fish${i+1}.jpg`,
+ src:`FishingImage/fish${i+1}.jpg`,
+ note:FISHING_CONTENT.photoNotes?.[`fish${i+1}.jpg`]||'',
 }));

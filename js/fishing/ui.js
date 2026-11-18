@@ -1,4 +1,5 @@
 /** Fishing rod/hook click target, reel animation, and a separate catchable gallery. */
+import {createGallery} from '../ui/gallery.js';
 import {FISH_IMAGES} from './data.js';
 import {FISHING_CONTENT} from '../content/fishing.js';
 import {fishingState,startCast,finishCast,resetCast} from './state.js';
@@ -7,74 +8,16 @@ import {STAGES} from '../data/stages.js';
 import {onNavigate} from '../ui/navigation.js';
 import {beep} from '../ui/audio.js';
 const fishingIndex=STAGES.findIndex(s=>s.id==='fishing');
-let hotspot=null,dialog=null,viewer=null,viewImg=null,castTimer=0,lastAnchor=0;
+let hotspot=null,dialog=null,gallery=null,castTimer=0,lastAnchor=0;
 const isFishing=()=>state.entered&&state.active===fishingIndex;
 /** Gallery dialogs are modal: background camera controls must not consume any input. */
-export const isFishingOverlayActive=()=>Boolean(dialog?.open||viewer?.open);
-const escText=(text)=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const localPhoto=(entry)=>globalThis.__questPreviewFishPhotos?.[entry.id-1]||entry.src;
-function makePhoto(entry){
- const img=document.createElement('img');img.src=localPhoto(entry);img.alt=entry.alt;
- img.loading='lazy';img.decoding='async';img.dataset.photoId=String(entry.id);
- return img;
-}
-function showPhoto(entry,image){
- viewImg.src=image.src;viewImg.alt=entry.alt;
- const caption=viewer.querySelector('[data-caption]');caption.textContent=`${entry.id} / ${FISH_IMAGES.length} · ${entry.alt}`;
- if(!viewer.open)viewer.showModal();
-}
+export const isFishingOverlayActive=()=>Boolean(gallery?.isOpen());
+const localPhoto=entry=>globalThis.__questPreviewFishPhotos?.[entry.id-1]||entry.src;
 function makeGallery(){
- dialog=document.createElement('dialog');dialog.id='fishingGallery';dialog.className='fishing-gallery-dialog';dialog.setAttribute('aria-label','釣果ギャラリー');
- dialog.innerHTML=`<div class="fishing-gallery-shell"><header class="gallery-masthead"><span class="gallery-icon">🐟</span><div><span class="gallery-mini-label">${escText(FISHING_CONTENT.miniLabel)}</span><h2>${escText(FISHING_CONTENT.title)}</h2><p>${escText(FISHING_CONTENT.intro)}</p><span class="gallery-scroll-hint">▼ SCROLL TO SEE ALL ${FISH_IMAGES.length} PHOTOS</span></div><button class="gallery-close" id="closeCatch" type="button" aria-label="釣果ギャラリーを閉じる">×</button></header><div class="gallery-photogrid" id="galleryPhotogrid"></div><footer class="gallery-footer"><span>${FISH_IMAGES.length} FISH CAUGHT</span><button id="releaseCatch" type="button">↶ WORLDへ戻る</button></footer></div>`;
- viewer=document.createElement('dialog');viewer.id='fishingPhotoViewer';viewer.className='fishing-photo-viewer';viewer.innerHTML=`<button type="button" aria-label="画像を閉じる" class="viewer-close">×</button><div class="viewer-image-wrap"><img alt="" id="viewerPhoto"></div><p data-caption></p>`;
- viewImg=viewer.querySelector('img');
- document.body.append(dialog,viewer);
- const grid=dialog.querySelector('#galleryPhotogrid');
- grid.tabIndex=0;
- grid.setAttribute('role','region');
- grid.setAttribute('aria-label',`釣果写真${FISH_IMAGES.length}枚。スクロールして最後まで閲覧できます`);
- for(const entry of FISH_IMAGES){
-  const b=document.createElement('button');b.className='gallery-photo';b.type='button';
-  b.setAttribute('aria-label',`${entry.alt}を拡大表示`);
-  const image=makePhoto(entry);
-  image.addEventListener('error',()=>{b.classList.add('is-missing-photo');b.disabled=true;});
-  const number=document.createElement('span');number.className='gallery-photo-number';
-  number.textContent=`FISH ${String(entry.id).padStart(2,'0')}`;
-  b.append(image,number);
-  b.addEventListener('click',()=>showPhoto(entry,image));grid.append(b);
- }
- // Do not bubble input to the 3D camera. Native scrolling on the grid remains intact.
- dialog.addEventListener('wheel',event=>{
-  if(!dialog.open)return;
-  event.stopPropagation();
-  const node=event.target instanceof Element?event.target:null;
-  if(!node?.closest('#galleryPhotogrid')){
-   const unit=event.deltaMode===1?16:event.deltaMode===2?grid.clientHeight:1;
-   grid.scrollTop+=event.deltaY*unit;
-   if(event.cancelable)event.preventDefault();
-  }
- },{capture:true,passive:false});
- viewer.addEventListener('wheel',event=>{
-  event.stopPropagation();if(event.cancelable)event.preventDefault();
- },{capture:true,passive:false});
- dialog.addEventListener('keydown',event=>{
-  if(!dialog.open||viewer.open)return;
-  const key=event.key;
-  const d={ArrowDown:80,ArrowUp:-80,PageDown:grid.clientHeight*.8,PageUp:-grid.clientHeight*.8,' ':grid.clientHeight*.8};
-  if(Object.prototype.hasOwnProperty.call(d,key)){
-   event.preventDefault();event.stopPropagation();grid.scrollTop+=d[key];
-  }else if(key==='Home'||key==='End'){
-   event.preventDefault();event.stopPropagation();
-   grid.scrollTop=key==='Home'?0:grid.scrollHeight;
-  }
- },{capture:true});
- dialog.querySelector('#closeCatch').addEventListener('click',closeGallery);
- dialog.querySelector('#releaseCatch').addEventListener('click',closeGallery);
- viewer.querySelector('.viewer-close').addEventListener('click',()=>viewer.close());
- viewer.addEventListener('click',event=>{if(event.target===viewer)viewer.close()});
- dialog.addEventListener('click',event=>{if(event.target===dialog)closeGallery()});
- dialog.addEventListener('close',()=>{dialog.classList.remove('is-caught');document.body.classList.remove('has-fishing-catch');fishingState.opened=false;resetCast();syncFishingUI()});
- window.addEventListener('keydown',event=>{if(event.key==='Escape'&&dialog.open&&!viewer.open){event.stopImmediatePropagation();closeGallery()}},true);
+ gallery=createGallery({id:'fishing',title:FISHING_CONTENT.title,label:FISHING_CONTENT.miniLabel,
+  intro:FISHING_CONTENT.intro,entries:FISH_IMAGES,itemLabel:'PHOTOS',resolveSource:localPhoto,
+  onClose(){document.body.classList.remove('has-fishing-catch');fishingState.opened=false;resetCast();syncFishingUI()}});
+ dialog=gallery.dialog;
 }
 export function syncFishingUI(){
  if(!hotspot)return;
@@ -85,7 +28,7 @@ export function syncFishingUI(){
  hotspot.querySelector('.fish-hotspot-text').textContent=fishingState.phase==='reeling'?'REELING IN…':'🎣 釣り糸をクリック';
  hotspot.setAttribute('aria-label',fishingState.phase==='reeling'?'釣り上げています':'釣り糸をクリックして釣果ギャラリーを釣り上げる');
 }
-export function closeGallery(){if(viewer?.open)viewer.close();if(dialog?.open)dialog.close();}
+export function closeGallery(){gallery?.close()}
 export function castFishingLine(){
  if(!isFishing()||dialog?.open)return false;
  if(!startCast(performance.now()))return false;
@@ -93,7 +36,7 @@ export function castFishingLine(){
  document.body.classList.add('fishing-reeling');
  clearTimeout(castTimer);castTimer=setTimeout(()=>{
   document.body.classList.remove('fishing-reeling');finishCast();
-  beep(690,.12);dialog.showModal();requestAnimationFrame(()=>{dialog.classList.add('is-caught');document.body.classList.add('has-fishing-catch');dialog.querySelector('#galleryPhotogrid').focus({preventScroll:true})});
+  beep(690,.12);gallery.open();document.body.classList.add('has-fishing-catch');
   syncFishingUI();
  },state.reduceMotion?180:1350);
  return true;

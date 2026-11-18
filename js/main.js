@@ -10,6 +10,7 @@ import {createMiningIntro} from './intro/mining.js';
 import {startWebGL} from './scene/webgl.js';
 import {startCSS3D} from './scene/css3d.js';
 import {installFishingUI} from './fishing/ui.js';
+import {installGraphicUI} from './graphic/ui.js';
 
 // The actual HTML documents are already semantic DOM inside the drawable canvas.
 // Do not duplicate all five long documents into a hidden accessibility mirror.
@@ -28,10 +29,11 @@ document.addEventListener('quest:native-failed',event=>{
  if(window.__quest3d){window.__quest3d.renderer='css3d';window.__quest3d.htmlInCanvas=false;window.__quest3d.stats=null}
 });
 const fishing=installFishingUI();
+const graphic=installGraphicUI();
 const intro=createMiningIntro();
 bindControls(intro);
 intro.start();
-window.__quest3d={renderer:renderer.type,htmlInCanvas:Boolean(renderer.htmlInCanvas),depthOcclusion:false,stats:renderer.stats||null,state,stages:STAGES,portfolio,fishing,
+window.__quest3d={renderer:renderer.type,htmlInCanvas:Boolean(renderer.htmlInCanvas),depthOcclusion:false,stats:renderer.stats||null,state,stages:STAGES,portfolio,fishing,graphic,
  getBoard:(i)=>(renderer.boards||document.querySelectorAll('.css3d-stage .board-scroll-area'))[i],
 };
 

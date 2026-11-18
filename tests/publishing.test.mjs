@@ -42,11 +42,13 @@ test('GitHub Pages root and static file paths are ready for deployment',()=>{
 });
 
 
-test('Re.Myprofile release keeps fishing image directory empty until user adds photos',()=>{
- assert.ok(existsSync(resolve(root,'image/.gitkeep')));
+test('gallery assets use separate FishingImage and GraphicImage folders',()=>{
+ assert.ok(existsSync(resolve(root,'FishingImage/.gitkeep')));
  assert.ok(!existsSync(resolve(root,'assets/fishing')));
+ assert.ok(existsSync(resolve(root,'GraphicImage/.gitkeep')));
+ assert.ok(!existsSync(resolve(root,'image')));
  const fishData=read('js/fishing/data.js');
- assert.match(fishData,/image\/fish/);
+ assert.match(fishData,/FishingImage\/fish/);
  assert.doesNotMatch(fishData,/assets\/fishing/);
  assert.match(read('js/content/links.js'),/github\.com\/daichidazo-k24\/Re\.Myprofile/);
 });
