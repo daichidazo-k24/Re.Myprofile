@@ -135,7 +135,7 @@ test('one sky batch for every stage, no per-frame uploads, at most one extra met
  sky.destroy();assert.equal(bridge.available,false);assert.equal(gl.deleted.length,2);
 });
 
-test('sky integration has no HTML invalidation, readback, extra composition or new dependency',()=>{
+test('legacy sky utility has no HTML invalidation and the live world no longer renders it',()=>{
  const source=readFileSync(new URL('../js/scene/sky.js',import.meta.url),'utf8');
  assert.doesNotMatch(source,/constellation|qualifications|activities|uFlash|uAge/i);
  const model=readFileSync(new URL('../js/scene/sky-model.js',import.meta.url),'utf8');
@@ -143,5 +143,6 @@ test('sky integration has no HTML invalidation, readback, extra composition or n
  assert.doesNotMatch(source,/texImage|texElement|readPixels|createFramebuffer|document\.|dispatchEvent|bufferSubData/);
  const world=readFileSync(new URL('../js/scene/webgl.js',import.meta.url),'utf8');
  assert.equal((world.match(/htmlBoards\.uploadPending\(/g)||[]).length,1);
- assert.equal((world.match(/sky\?\.draw\(/g)||[]).length,1);
+ assert.equal((world.match(/sky\?\.draw\(/g)||[]).length,0);
+ assert.doesNotMatch(world,/createSkyRenderer|createPlanetarium/);
 });
