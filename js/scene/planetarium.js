@@ -26,7 +26,7 @@ void main(){
  float depth=dot(direction,uRays[2]);
  vec2 projected=vec2(dot(direction,uRays[0])/dot(uRays[0],uRays[0]),
                      dot(direction,uRays[1])/dot(uRays[1],uRays[1]));
- gl_Position=vec4(projected,depth,depth);
+ gl_Position=vec4(projected,depth*.9999,depth);
  gl_Position.xy+=aCorner*aStyle.x*6.*uPixelRatio/uViewport*depth;
  vPoint=aCorner*3.;vColor=aColor;
  vBright=smoothstep(.76,1.,aStyle.y);
@@ -43,13 +43,12 @@ varying vec3 vColor;
 varying float vAlpha;
 varying float vBright;
 void main(){
- float radius2=dot(vPoint,vPoint);
- float core=exp2(-4.*radius2);
- float halo=exp2(-.8*radius2)*.12*vBright;
  vec2 p=abs(vPoint);
- float rays=exp2(-48.*min(p.x,p.y)*min(p.x,p.y)-2.4*max(p.x,p.y))*vBright*.10;
- float edge=1.-smoothstep(2.,3.,max(p.x,p.y));
- gl_FragColor=vec4(vColor,min(1.,(core+halo+rays)*vAlpha*edge));
+ // Tiny square stars and a stepped cross on the rare brightest stars.
+ float core=1.-smoothstep(.55,.72,max(p.x,p.y));
+ float cross=(1.-step(.28,min(p.x,p.y)))*(1.-step(1.65,max(p.x,p.y)))*vBright*.32;
+ float halo=exp2(-2.*dot(p,p))*.07*vBright;
+ gl_FragColor=vec4(vColor,min(1.,(core+cross+halo)*vAlpha*.86));
 }`;
 
 const CORNERS=[[-1,-1],[1,-1],[1,1],[-1,-1],[1,1],[-1,1]];
