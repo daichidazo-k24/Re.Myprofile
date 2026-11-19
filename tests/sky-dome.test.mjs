@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SKY_DOME_CENTER,SKY_DOME_RADIUS,skyDomeDirection} from '../js/scene/sky-dome.js';
-import {createAuroraPanels} from '../js/scene/aurora-panel-model.js';
+import {createPlanetariumStars} from '../js/scene/planetarium-model.js';
 import {createSkyCamera,updateCSSSkyCamera} from '../js/scene/sky-camera.js';
 import {CAMERA_LIMITS,worldCameraPose} from '../js/ui/orbit-camera.js';
 import {state} from '../js/state.js';
@@ -20,11 +20,11 @@ test('every sky ray lands on a round shell with identical horizontal and vertica
  }
 });
 
-test('sky ray intersections coincide with the hinges on the same spherical screen',()=>{
- const panels=createAuroraPanels(),out=new Float64Array(3);
+test('aurora ray intersections coincide with the stars on the same spherical screen',()=>{
+ const stars=createPlanetariumStars(),out=new Float64Array(3);
  for(const eye of [[0,6,18],[33.75,40,0],[67.5,4,9],[-30,16,65]]){
-  for(let i=0;i<panels.length;i+=67){
-   const direction=panels[i].center;
+  for(let i=0;i<stars.length;i+=29){
+   const direction=stars[i].direction;
    const ray=direction.map((v,j)=>SKY_DOME_CENTER[j]+v*SKY_DOME_RADIUS-eye[j]);
    skyDomeDirection(eye,ray,out);
    direction.forEach((v,j)=>assert.ok(Math.abs(v-out[j])<1e-12,'projection layers cannot slide onto different shells'));

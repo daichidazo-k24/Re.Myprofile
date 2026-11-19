@@ -1,5 +1,5 @@
 /** One round planetarium shell encloses the island, including mobile camera poses.
- * Aurora panels and the night backing share this center and radius; no vertical scaling. */
+ * Aurora and stars use this exact center and radius; no vertical scaling. */
 import {STAGES,STEP} from '../data/stages.js';
 
 export const SKY_DOME_RADIUS=180;

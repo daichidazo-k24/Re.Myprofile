@@ -1,15 +1,15 @@
 /** Reuse the world canvas for the same sky when only HTML-in-Canvas is missing.
  * The CSS3D world remains in front of the camera-aware sky dome. */
 import {createSkyBackground} from './sky-background.js';
-import {createAuroraPanelRenderer} from './aurora-panels.js';
+import {createPlanetarium} from './planetarium.js';
 
 export function createSkyBackdrop(canvas){
- let background,panels;
+ let background,planetarium;
  try{
   const gl=canvas.getContext('webgl2')||canvas.getContext('webgl');
   if(!gl)return null;
   background=createSkyBackground(gl);
-  panels=createAuroraPanelRenderer(gl);
+  planetarium=createPlanetarium(gl);
   gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);
   gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
   gl.clearColor(.012,.023,.055,1);
@@ -23,13 +23,13 @@ export function createSkyBackdrop(canvas){
     gl.viewport(0,0,width,height);
     gl.depthMask(true);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
     background.draw(state,dt,width,height,camera);
-    panels.draw(state,dt,camera);
+    planetarium.draw(state,dt,width,height,camera,canvas.clientHeight);
    },
-   destroy(){background.destroy();panels.destroy()},
+   destroy(){background.destroy();planetarium.destroy()},
   };
  }catch(error){
   background?.destroy();
-  panels?.destroy();
+  planetarium?.destroy();
   console.warn('Aurora background unavailable:',error);
   return null;
  }

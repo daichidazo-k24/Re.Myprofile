@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createSkyBackground} from '../js/scene/sky-background.js';
 import {createSkyCamera,updateSkyCamera} from '../js/scene/sky-camera.js';
+
 const camera=updateSkyCamera(createSkyCamera(),[0,5,18],[0,2,-1.55],Math.PI/3,1.6);
 
 function fakeGL(failAt=''){
@@ -41,6 +42,7 @@ test('background has one static triangle, no per-frame uploads, and restores dep
  for(let frame=0;frame<120;frame++)background.draw(state,1/60,1800,1100,camera);
  assert.equal(gl.draws.length,120);assert.equal(gl.uploads.length,1);
  assert.deepEqual(gl.draws.at(-1).uViewport,[1800,1100]);
+ assert.ok(Math.abs(gl.draws.at(-1).uTime-2)<1e-10);
  assert.equal(gl.depthWrite,true);assert.equal(gl.enabled.size,0);
  background.draw(state,1/60,390,844,camera);
  assert.deepEqual(gl.draws.at(-1).uViewport,[390,844],'portrait resizes without rebuilding geometry');
@@ -49,22 +51,23 @@ test('background has one static triangle, no per-frame uploads, and restores dep
  assert.deepEqual(gl.deleted.map(value=>value.kind).sort(),['buffer','program','shader','shader']);
 });
 
-test('the dark backing stays static while focus dims it without touching camera state',()=>{
+test('intro and reduced motion freeze the background; focus dims it without touching camera state',()=>{
  const gl=fakeGL(),background=createSkyBackground(gl);
  const state={entered:false,reduceMotion:false,focusMix:0,cameraX:24,orbitYaw:.7};
- background.draw(state,1,1440,900,camera);const initial=gl.draws.at(-1);
+ background.draw(state,1,1440,900,camera);assert.equal(gl.draws.at(-1).uTime,0);
  state.entered=true;background.draw(state,1,1440,900,camera);
- assert.deepEqual(gl.draws.at(-1),initial,'only the tiles animate');
+ assert.equal(gl.draws.at(-1).uTime,.05,'large time gaps cannot jump the light');
  state.reduceMotion=true;state.focusMix=.8;
  const previous={...state};
  for(let frame=0;frame<60;frame++)background.draw(state,1/60,1440,900,camera);
+ assert.equal(gl.draws.at(-1).uTime,.05,'freeze current image instead of resetting animation');
  assert.equal(gl.draws.at(-1).uFocus,.8);assert.deepEqual(state,previous);
  state.reduceMotion=false;background.draw(state,.01,1440,900,camera);
- assert.equal(gl.draws.at(-1).uFocus,.8);
+ assert.ok(Math.abs(gl.draws.at(-1).uTime-.06)<1e-10,'resume without a jump');
  background.destroy();
 });
 
-test('camera changes reach the dome even while reduced motion freezes its colors',()=>{
+test('camera movement updates the dome projection even when animation is frozen',()=>{
  const gl=fakeGL(),background=createSkyBackground(gl),view=createSkyCamera();
  const state={entered:true,reduceMotion:true,focusMix:0};
  updateSkyCamera(view,[0,4,18],[0,2,0],1,1.6);
@@ -72,11 +75,9 @@ test('camera changes reach the dome even while reduced motion freezes its colors
  const initial=gl.draws.at(-1);
  updateSkyCamera(view,[35,9,12],[28,2,0],.7,1.6);
  background.draw(state,.016,1440,900,view);
- const moved=gl.draws.at(-1);
- assert.notDeepEqual(moved.uRays,initial.uRays);
- assert.deepEqual(moved.uEye,[35,9,12]);
- assert.equal(moved.uTime,initial.uTime);
- assert.equal(gl.uploads.length,1,'orbit must not rebuild the sky geometry');
+ assert.notDeepEqual(gl.draws.at(-1).uRays,initial.uRays);
+ assert.deepEqual(gl.draws.at(-1).uEye,[35,9,12]);
+ assert.equal(gl.draws.at(-1).uTime,initial.uTime);assert.equal(gl.uploads.length,1);
  background.destroy();
 });
 
@@ -88,7 +89,7 @@ for(const failAt of ['compile','link'])test(`background releases partial GPU res
  assert.equal(gl.draws.length,0);
 });
 
-test('background shares the world canvas, keeps depth testing, and precedes the rotating panels',()=>{
+test('background shares the world canvas, keeps depth testing, and precedes the transparent stars',()=>{
  const source=readFileSync(new URL('../js/scene/sky-background.js',import.meta.url),'utf8');
  assert.doesNotMatch(source,/document\.|getContext|createTexture|createFramebuffer|readPixels|\.disable\(/);
  const gl=fakeGL(),background=createSkyBackground(gl);
@@ -96,7 +97,7 @@ test('background shares the world canvas, keeps depth testing, and precedes the 
  const world=readFileSync(new URL('../js/scene/webgl.js',import.meta.url),'utf8');
  const bg=world.indexOf('background?.draw(');
  assert.ok(bg>world.indexOf('draw(terrainMesh'));
- assert.ok(bg<world.indexOf('auroraPanels?.draw('),'panels must not be painted over by the opaque background');
+ assert.ok(bg<world.indexOf('sky?.draw('),'stars must not be painted over by the opaque background');
  assert.match(world,/try\{background=createSkyBackground\(gl\)\}catch/,'decoration failure retains the world');
  background.destroy();
 });

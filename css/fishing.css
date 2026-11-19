@@ -35,6 +35,7 @@
 .fishing-css-stage .fish-line{position:absolute;left:514px;top:82px;width:2px;height:289px;background:#d8e8ff;transform:translateZ(100px);box-shadow:0 0 13px #c2ddff}
 .fishing-css-stage .fish-bob{position:absolute;left:496px;top:361px;width:38px;height:38px;border:5px solid #ffe8a7;background:#ed8b24;transform:translateZ(106px);box-shadow:6px 6px #142442;animation:fishing-bob 2s steps(3,end) infinite}
 .fishing-css-stage .fish-anchor{position:absolute;left:516px;top:368px;width:8px;height:8px;transform:translateZ(115px)}
+.fishing-css-stage .fish-pixel-stars{position:absolute;left:600px;top:200px;width:13px;height:13px;box-shadow:32px 100px #5677a8,80px 38px #f6b44d,123px 184px #5677a8,159px 25px #92b6d5,13px 213px #f4aa47;opacity:.75}
 .fishing-css-stage .fishing-island-marker{position:absolute;left:0;top:-15px;font:900 12px 'Courier New',monospace;color:#ffcd77;letter-spacing:2px;text-shadow:2px 3px #0b1630}
 @keyframes fishing-bob{50%{transform:translateZ(106px) translateY(-9px)}}
 body.fishing-reeling .fishing-css-stage .fish-bob{animation:fish-pull 1.3s ease-in forwards}body.fishing-reeling .fishing-css-stage .fish-line{animation:fish-line-pull 1.3s ease-in forwards}

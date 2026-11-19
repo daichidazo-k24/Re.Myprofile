@@ -34,7 +34,7 @@ export function startCSS3D(){
 <rect x="510" y="210" width="20" height="20" fill="#f5ad3a" stroke="#ffd98a" stroke-width="3"/>
 <line class="fish-svg-line" x1="520" y1="220" x2="520" y2="345" stroke="#d8e8ff" stroke-width="3"/>
 <g class="fish-svg-bob"><rect x="504" y="329" width="32" height="32" fill="#f68d1f" stroke="#fff1bc" stroke-width="4"/><rect x="513" y="335" width="13" height="9" fill="#fff0ab"/></g>
-</svg><div class="fish-anchor"></div><div class="fishing-island-marker">EDGE OF THE ISLAND / FISHING SPOT</div></div>`;
+</svg><div class="fish-anchor"></div><div class="fish-pixel-stars"></div><div class="fishing-island-marker">EDGE OF THE ISLAND / FISHING SPOT</div></div>`;
    world.appendChild(stage);stages.push(stage);return;
   }
   stage.innerHTML=`<div class="css3d-back"></div><div class="board-popup-title" aria-hidden="true">${meta.boardHeading}</div><div class="css3d-frame"><span class="corner-led"></span><div class="card-cut board-scroll-area" tabindex="0" role="region" aria-label="${meta.short} の連続スクロール資料"><div class="board-scroll-sized"><div class="board-scroll-sheet">${renderStageDocument(i)}</div></div></div><span class="monitor-scroll-track" aria-hidden="true"><span></span></span></div><div class="sprite-podium"></div><img class="css-miner" src="${new URL('../../assets/miner.png',import.meta.url).href}" alt=""><div class="block-stack">${Array.from({length:6},(_,j)=>`<div class="voxel" style="--d:${(j%3)*22}px;--delay:${j*.2}s"></div>`).join('')}</div><div class="stage-plinth"></div>`;
@@ -75,6 +75,11 @@ export function startCSS3D(){
    else if(!state.focused)toggleFocus();
   });
  });
+ // The shared celestial sphere replaces screen-fixed decorative light dots.
+ if(!backdrop){
+  const stars=document.createElement('div');stars.className='css3d-star-panorama';
+  stars.setAttribute('aria-hidden','true');viewport.appendChild(stars);
+ }
  document.getElementById('worldCanvas').insertAdjacentElement('afterend',viewport);
  function applyPositions(){stages.forEach((stage,i)=>{
   const baseZ=i%2===0?-15:-100,focusZ=state.focused?(i===state.active?140:-260-Math.abs(i-state.active)*45):0;

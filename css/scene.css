@@ -44,11 +44,23 @@ body:not(.is-focus-mode) .css3d-viewport{user-select:none;-webkit-user-select:no
 .css3d-viewport{background:#030713}
 .css3d-viewport::after{
  content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;
- background-image:url('../assets/aurora-panels.svg');background-repeat:repeat-x;
+ background-image:url('../assets/aurora-fallback.png');background-repeat:repeat-x;
  background-size:var(--sky-width,500%) var(--sky-height,400%);
  background-position:var(--sky-x,0px) var(--sky-y,0px);
  image-rendering:pixelated;opacity:1;transition:opacity .6s ease;
+ animation:sky-panorama-color 4.9s ease-in-out infinite alternate paused;
 }
+body.world-entered .css3d-viewport::after{animation-play-state:running}
 body.is-focus-mode .css3d-viewport::after{opacity:.65}
 .css3d-viewport.has-sky-backdrop{background:transparent}
 .css3d-viewport.has-sky-backdrop::after{display:none}
+.css3d-star-panorama{
+ position:absolute;inset:0;z-index:-1;pointer-events:none;
+ background-image:url('../assets/planetarium-stars.svg');background-repeat:repeat-x;
+ background-size:var(--sky-width,500%) var(--sky-height,400%);
+ background-position:var(--sky-x,0px) var(--sky-y,0px);
+ transition:opacity .6s ease;
+}
+body.is-focus-mode .css3d-star-panorama{opacity:.58}
+@keyframes sky-panorama-color{from{filter:hue-rotate(-18deg) brightness(.9)}to{filter:hue-rotate(18deg) brightness(1.12)}}
+@media(prefers-reduced-motion:reduce){body.world-entered .css3d-viewport::after{animation-play-state:paused}}

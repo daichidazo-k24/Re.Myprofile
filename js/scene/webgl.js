@@ -8,8 +8,9 @@ import {fishingState} from '../fishing/state.js';
 import {positionFishingHotspot} from '../fishing/ui.js';
 import {minerModel} from './miner-pose.js';
 import {worldCameraPose} from '../ui/orbit-camera.js';
+import {createSkyRenderer} from './sky.js';
 import {createSkyBackground} from './sky-background.js';
-import {createAuroraPanelRenderer} from './aurora-panels.js';
+import {createPlanetarium} from './planetarium.js';
 import {createSkyCamera,updateSkyCamera} from './sky-camera.js';
 import {GRAPHIC_BOARD,createGraphicSign} from '../graphic/board.js';
 import {syncGraphicBoard} from '../graphic/ui.js';
@@ -22,7 +23,7 @@ export function startWebGL(state,onPageChange){
  // can run the WebGL stage. Unsupported browsers use the CSS3D fallback.
  if(!gl||!isNativeHTMLCanvasAvailable(glCanvas,gl))return null;
  let program,cubeMesh,planeMesh,terrainMesh,loc={},whiteTex,minerTex,titleTextures=[],htmlBoards=null;
- let lastTs=0,introZoom=30,running=true,background=null,auroraPanels=null,graphicTex=null,graphicMesh=null;
+ let lastTs=0,introZoom=30,running=true,sky=null,background=null,planetarium=null,graphicTex=null,graphicMesh=null;
  const skyCamera=createSkyCamera();
  const graphicModel=M.move(GRAPHIC_BOARD.x,GRAPHIC_BOARD.y,GRAPHIC_BOARD.z);
  const graphicLabelModel=M.model(GRAPHIC_BOARD.x,GRAPHIC_BOARD.y+NOTEBOOK_LABEL.y,GRAPHIC_BOARD.z+NOTEBOOK_LABEL.z,NOTEBOOK_LABEL.worldWidth,NOTEBOOK_LABEL.worldHeight,1);
@@ -63,8 +64,8 @@ export function startWebGL(state,onPageChange){
  }
 function buildTerrain(){const a=[];const base=makeCube();function emit(x,y,z,sx,sy,sz,col){const [r,g,b]=hex(col);for(let k=0;k<base.length;k+=11){a.push(base[k]*sx+x,base[k+1]*sy+y,base[k+2]*sz+z,...base.slice(k+3,k+8),r,g,b)}}const cols=['#4b5b86','#48567b','#5e6e9c','#384767','#6677a4'];for(let st=0;st<STAGES.length-1;st++){let baseX=st*STEP;for(let x=-8;x<=8;x++)for(let z=-8;z<=6;z++){if(seeded(st*19+x,z)> .92 && z>3)continue;const c=cols[Math.floor(seeded(x,st*7+z)*cols.length)];let level=seeded(x*4+st,z*2)>.83?.08:0;emit(baseX+x*1.08,-.43+level,z*1.08,1.05,.66,1.05,c);if(seeded(x+44,z+st*36)>.965){emit(baseX+x*1.08,-.06,z*1.08,.6,.08,.6,'#e3a94d')}}}
  for(let z=-7;z<=5;z++)for(let st=0;st<STAGES.length-1;st++){let x=st*STEP-7.7;const h=1+Math.floor(seeded(st,z,22)*3);if(seeded(st,z)>.4)emit(x,h*.5,z*1.07,.9,h,.9,cols[(st+Math.abs(z))%5])}
- // Low distant silhouettes leave the spherical sky open above the island.
- for(let x=-45;x<=(STAGES.length-1)*STEP+45;x+=4.3){const h=1+seeded(x|0,30)*2;emit(x,h/2-1,-35,3,h,3,'#162340');emit(x,h-1+.075,-35,3,.15,3,'#293c67')}
+ // Distant monolithic dark castle silhouette and ground islands
+ for(let x=-45;x<=(STAGES.length-1)*STEP+45;x+=4.3){const h=3+seeded(x|0,30)*13;emit(x,h/2-1,-20,3,h,3,'#162340');emit(x,h+.15,-20,3,.15,3,'#293c67')}
  return a}
 function draw(mesh_,model,color='#fff',tex=whiteTex,unlit=0,fog=1){gl.bindBuffer(gl.ARRAY_BUFFER,mesh_.buffer);const stride=44;for(const [name,size,offs] of [['aPos',3,0],['aNorm',3,12],['aUv',2,24],['aCol',3,32]]){const l=loc[name];gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,size,gl.FLOAT,false,stride,offs)}gl.uniformMatrix4fv(loc.uModel,false,model);const v=hex(color);gl.uniform4f(loc.uColor,v[0],v[1],v[2],1);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex||whiteTex);gl.uniform1f(loc.uUseTex,tex&&tex!==whiteTex?1:0);gl.uniform1f(loc.uUnlit,unlit);gl.uniform1f(loc.uFog,fog);gl.drawArrays(gl.TRIANGLES,0,mesh_.count)}
 function box(x,y,z,sx,sy,sz,color,ry=0,rx=0,rz=0){draw(cubeMesh,M.model(x,y,z,sx,sy,sz,ry,rx,rz),color)}
@@ -101,6 +102,7 @@ function drawStageProps(i,t){const x=i*STEP,fx=x+5.5;
  for(let j=0;j<4;j++){const sign=j%2?-1:1;const px=x+sign*(7.05+((j>>1)*.8)),pz=(j>>1)*3.4-3.3;box(px,1.45+Math.sin(t+j)*.14,pz,.36,.72,.36,STAGES[i].color,t*.3+j*.6,.2);box(px,.6,pz,.55,1.15,.55,'#263d64')}
 }
 
+ const floaters=Array.from({length:80},(_,i)=>({offX:(seeded(i,33)-.5)*160,y:1+seeded(i,97)*12,z:-4-seeded(i,103)*20,size:.05+seeded(i,38)*.12,speed:.3+seeded(i,28)*1.5}));
  function viewport(){
   // Scale both axes together: separate caps stretch a round dome on tall/wide screens.
   const dpr=Math.min(devicePixelRatio||1,1.5,1800/innerWidth,1100/innerHeight);
@@ -144,8 +146,10 @@ function drawStageProps(i,t){const x=i*STEP,fx=x+5.5;
    draw(planeMesh,graphicLabelModel,'#ffffff',graphicTex,1,0);
   }
   syncGraphicBoard(vWorld,innerWidth,innerHeight,eye);
+  for(const [i,p] of floaters.entries()){if(Math.abs(p.offX-cameraX)>19)continue;const y=p.y+Math.sin(t*p.speed+i)*.8;box(p.offX,y,p.z,p.size,p.size,p.size,i%5===0?'#f5a944':'#7f9fc9',t*.12)}
   background?.draw(state,dt,glCanvas.width,glCanvas.height,skyCamera);
-  auroraPanels?.draw(state,dt,skyCamera);
+  planetarium?.draw(state,dt,glCanvas.width,glCanvas.height,skyCamera,innerHeight);
+  sky?.draw(vWorld,state,t,dt,glCanvas.width,glCanvas.height,innerHeight);
   // Sync hit-testing geometry without re-uploading DOM pixels during orbit.
   for(let i=0;i<STAGES.length-1;i++){
    if(Math.abs(i*STEP-cameraX)>28)continue;
@@ -168,15 +172,16 @@ function drawStageProps(i,t){const x=i*STEP,fx=x+5.5;
  try{
   setupGl();
   // Optional decoration failure must not disable the native HTML-in-Canvas engine.
+  try{sky=createSkyRenderer(gl,state.miningSky)}catch(error){console.warn('Sky effects unavailable:',error)}
   try{background=createSkyBackground(gl)}catch(error){console.warn('Sky background unavailable:',error)}
-  try{auroraPanels=createAuroraPanelRenderer(gl)}catch(error){console.warn('Aurora panels unavailable:',error)}
+  try{planetarium=createPlanetarium(gl)}catch(error){console.warn('Planetarium unavailable:',error)}
   htmlBoards=createNativeBoardTextures(gl,glCanvas);
   document.body.classList.add('native-html-canvas');
   requestAnimationFrame(frame);
   return {type:'webgl',htmlInCanvas:true,depthOcclusion:false,stats:htmlBoards.stats,boards:htmlBoards.roots,
-   destroy(){running=false;background?.destroy();auroraPanels?.destroy();if(graphicTex)gl.deleteTexture(graphicTex);if(graphicMesh)gl.deleteBuffer(graphicMesh.buffer);htmlBoards?.destroy();document.body.classList.remove('native-html-canvas')}};
+   destroy(){running=false;sky?.destroy();background?.destroy();planetarium?.destroy();if(graphicTex)gl.deleteTexture(graphicTex);if(graphicMesh)gl.deleteBuffer(graphicMesh.buffer);htmlBoards?.destroy();document.body.classList.remove('native-html-canvas')}};
  }catch(error){
   console.error('Native HTML-in-Canvas fallback:',error);
-  background?.destroy();auroraPanels?.destroy();if(graphicTex)gl.deleteTexture(graphicTex);if(graphicMesh)gl.deleteBuffer(graphicMesh.buffer);htmlBoards?.destroy();return null;
+  sky?.destroy();background?.destroy();planetarium?.destroy();if(graphicTex)gl.deleteTexture(graphicTex);if(graphicMesh)gl.deleteBuffer(graphicMesh.buffer);htmlBoards?.destroy();return null;
  }
 }
