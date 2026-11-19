@@ -38,3 +38,27 @@ body.is-focus-mode .css3d-stage.is-focus-target .board-popup-title{border-color:
 /* Camera drags must not select the 3D stage titles or underlying world text. */
 .css3d-stage .board-popup-title{user-select:none;-webkit-user-select:none}
 body:not(.is-focus-mode) .css3d-viewport{user-select:none;-webkit-user-select:none}
+
+/* Matching 2D atmosphere for browsers on the existing CSS3D fallback.
+   This pseudo-element sits below the grid, stars and 3D world; it never handles input. */
+.css3d-viewport{background:linear-gradient(180deg,#183356 0%,#101f40 43%,#050b1b 100%)}
+.css3d-viewport::after{
+ content:"";position:absolute;inset:-12%;z-index:-1;pointer-events:none;
+ background:
+  radial-gradient(ellipse 58% 35% at 25% 15%,rgba(50,154,202,.72),rgba(28,87,153,.35) 49%,transparent 80%),
+  radial-gradient(ellipse 43% 17% at 66% 18%,rgba(162,213,232,.35),rgba(71,125,182,.16) 47%,transparent 78%),
+  linear-gradient(166deg,transparent 18%,rgba(77,161,207,.34) 32%,rgba(30,80,149,.12) 44%,transparent 56%),
+  linear-gradient(180deg,rgba(29,76,128,.85),rgba(16,34,72,.5) 48%,transparent 76%);
+ opacity:1;transition:opacity .6s ease;
+ animation:sky-background-drift 32s ease-in-out infinite alternate;
+ animation-play-state:paused;
+}
+body.world-entered .css3d-viewport::after{animation-play-state:running}
+body.is-focus-mode .css3d-viewport::after{opacity:.65}
+@keyframes sky-background-drift{
+ from{transform:translate(-1%,-1%) scale(1.02)}
+ to{transform:translate(2%,1.5%) scale(1.08)}
+}
+@media(prefers-reduced-motion:reduce){
+ body.world-entered .css3d-viewport::after{animation-play-state:paused}
+}

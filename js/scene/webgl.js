@@ -9,6 +9,7 @@ import {positionFishingHotspot} from '../fishing/ui.js';
 import {minerModel} from './miner-pose.js';
 import {worldCameraPose} from '../ui/orbit-camera.js';
 import {createSkyRenderer} from './sky.js';
+import {createSkyBackground} from './sky-background.js';
 import {GRAPHIC_BOARD,createGraphicSign} from '../graphic/board.js';
 import {syncGraphicBoard} from '../graphic/ui.js';
 import {createNotebookMesh,NOTEBOOK_LABEL} from '../graphic/notebook.js';
@@ -20,7 +21,7 @@ export function startWebGL(state,onPageChange){
  // can run the WebGL stage. Unsupported browsers use the CSS3D fallback.
  if(!gl||!isNativeHTMLCanvasAvailable(glCanvas,gl))return null;
  let program,cubeMesh,planeMesh,terrainMesh,loc={},whiteTex,minerTex,titleTextures=[],htmlBoards=null;
- let lastTs=0,introZoom=30,running=true,sky=null,graphicTex=null,graphicMesh=null;
+ let lastTs=0,introZoom=30,running=true,sky=null,background=null,graphicTex=null,graphicMesh=null;
  const graphicModel=M.move(GRAPHIC_BOARD.x,GRAPHIC_BOARD.y,GRAPHIC_BOARD.z);
  const graphicLabelModel=M.model(GRAPHIC_BOARD.x,GRAPHIC_BOARD.y+NOTEBOOK_LABEL.y,GRAPHIC_BOARD.z+NOTEBOOK_LABEL.z,NOTEBOOK_LABEL.worldWidth,NOTEBOOK_LABEL.worldHeight,1);
  const time0=performance.now();
@@ -136,6 +137,7 @@ function drawStageProps(i,t){const x=i*STEP,fx=x+5.5;
   }
   syncGraphicBoard(vWorld,innerWidth,innerHeight,eye);
   for(const [i,p] of floaters.entries()){if(Math.abs(p.offX-cameraX)>19)continue;const y=p.y+Math.sin(t*p.speed+i)*.8;box(p.offX,y,p.z,p.size,p.size,p.size,i%5===0?'#f5a944':'#7f9fc9',t*.12)}
+  background?.draw(state,dt,glCanvas.width,glCanvas.height);
   sky?.draw(vWorld,state,t,dt,glCanvas.width,glCanvas.height,innerHeight);
   // Sync hit-testing geometry without re-uploading DOM pixels during orbit.
   for(let i=0;i<STAGES.length-1;i++){
@@ -160,13 +162,14 @@ function drawStageProps(i,t){const x=i*STEP,fx=x+5.5;
   setupGl();
   // Optional decoration failure must not disable the native HTML-in-Canvas engine.
   try{sky=createSkyRenderer(gl,state.miningSky)}catch(error){console.warn('Sky effects unavailable:',error)}
+  try{background=createSkyBackground(gl)}catch(error){console.warn('Sky background unavailable:',error)}
   htmlBoards=createNativeBoardTextures(gl,glCanvas);
   document.body.classList.add('native-html-canvas');
   requestAnimationFrame(frame);
   return {type:'webgl',htmlInCanvas:true,depthOcclusion:false,stats:htmlBoards.stats,boards:htmlBoards.roots,
-   destroy(){running=false;sky?.destroy();if(graphicTex)gl.deleteTexture(graphicTex);if(graphicMesh)gl.deleteBuffer(graphicMesh.buffer);htmlBoards?.destroy();document.body.classList.remove('native-html-canvas')}};
+   destroy(){running=false;sky?.destroy();background?.destroy();if(graphicTex)gl.deleteTexture(graphicTex);if(graphicMesh)gl.deleteBuffer(graphicMesh.buffer);htmlBoards?.destroy();document.body.classList.remove('native-html-canvas')}};
  }catch(error){
   console.error('Native HTML-in-Canvas fallback:',error);
-  sky?.destroy();if(graphicTex)gl.deleteTexture(graphicTex);if(graphicMesh)gl.deleteBuffer(graphicMesh.buffer);htmlBoards?.destroy();return null;
+  sky?.destroy();background?.destroy();if(graphicTex)gl.deleteTexture(graphicTex);if(graphicMesh)gl.deleteBuffer(graphicMesh.buffer);htmlBoards?.destroy();return null;
  }
 }

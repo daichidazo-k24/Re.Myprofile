@@ -73,7 +73,9 @@ function fakeGL(){
   createProgram:()=>({}),createShader:()=>({}),shaderSource(){},compileShader(){},getShaderParameter:()=>true,
   attachShader(){},linkProgram(){},getProgramParameter:()=>true,getAttribLocation:(_,n)=>['aFrom','aTo','aCorner','aStyle','aColor'].indexOf(n),
   getUniformLocation:(_,n)=>n,createBuffer:()=>({}),bindBuffer(_,b){bound=b},bufferData(_,data){bound.length=data.length;uploads.push(data)},
-  useProgram(){},depthMask(value){this.depthWrite=value},uniformMatrix4fv(){},uniform2f(){},
+  useProgram(){},depthMask(value){this.depthWrite=value},
+  uniformMatrix4fv(name,transpose,value){assert.equal(transpose,false);uniforms[name]=Array.from(value)},
+  uniform2f(name,x,y){uniforms[name]=[x,y]},
   uniform1f(name,value){uniforms[name]=value},enableVertexAttribArray(n){enabled.add(n)},disableVertexAttribArray(n){enabled.delete(n)},
   vertexAttribPointer(n,size,type,norm,stride,offset){attribs.set(n,{buffer:bound,size,stride,offset})},
   drawArrays(mode,first,count){
@@ -82,6 +84,37 @@ function fakeGL(){
   },deleteBuffer(b){deleted.push(b)},deleteShader(){},deleteProgram(){},uploads,draws,deleted,enabled};
  return gl;
 }
+
+test('glowing stars retain the world geometry and camera projection used by the mining handoff',()=>{
+ const gl=fakeGL(),bridge=createMiningSkyBridge(),stars=createSkyStars(),sky=createSkyRenderer(gl,bridge);
+ const data=gl.uploads[0];
+ assert.equal(data.length,SKY_STAR_COUNT*6*14,'same static vertex storage');
+ for(const [i,star] of stars.entries())for(let corner=0;corner<6;corner++){
+  const offset=(i*6+corner)*14;
+  assert.deepEqual(Array.from(data.slice(offset,offset+6)),[...star.position,...star.position].map(Math.fround));
+  assert.deepEqual(Array.from(data.slice(offset+8,offset+14)),[0,star.size,star.phase,...star.color].map(Math.fround));
+ }
+ bridge.active=true;
+ const state={active:0,entered:false,reduceMotion:false};
+ for(const [width,height,cssHeight] of [[1440,900,900],[585,1100,844]]){
+  for(const eye of [[2.4,6.47,15.36],[-8,10,12],[2,5,30]]){
+   const vp=M.mul(M.persp(56*Math.PI/180,width/height,.1,120),M.look(eye,[0,2.65,-1.55]));
+   sky.draw(vp,state,2,.016,width,height,cssHeight);
+   const submitted=gl.draws.at(-1);
+   assert.deepEqual(submitted.uVP,Array.from(vp),'glow uses the same moving world camera');
+   assert.deepEqual(submitted.uViewport,[width,height]);
+   assert.equal(submitted.uPixelRatio,height/cssHeight);
+   assert.equal(submitted.uOffsetX,0);assert.equal(submitted.uMotion,0,'intro remains steady');
+   assert.equal(submitted.uOpacity,1);assert.equal(submitted.count,SKY_STAR_COUNT*6);
+   const expected=createMiningSkyBridge();
+   expected.indices.set(bridge.indices);expected.targetCount=bridge.targetCount;
+   projectMiningTargets(expected,stars,vp,width,height,height/cssHeight);
+   assert.deepEqual(bridge.targets,expected.targets,'halo extent does not change debris destinations or sizes');
+  }
+ }
+ assert.equal(gl.uploads.length,2,'moving the camera and glow never rebuilds geometry');
+ sky.destroy();
+});
 
 test('one sky batch for every stage, no per-frame uploads, at most one extra meteor draw',()=>{
  const gl=fakeGL(),bridge=createMiningSkyBridge(),sky=createSkyRenderer(gl,bridge),vp=M.id();

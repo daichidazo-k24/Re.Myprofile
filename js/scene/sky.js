@@ -1,7 +1,13 @@
 /** One static triangle batch for the whole sky, plus one reusable meteor.
- * Shader-only reveal/twinkle; no framebuffer, DOM or texture work. */
+ * Shader-only glow/twinkle; no framebuffer, DOM or texture work. */
 import {createSkyStars,projectMiningTargets,STAR_MIN_PIXELS,STAR_MAX_PIXELS} from './sky-model.js';
 import {STEP} from '../data/stages.js';
+
+// Extend only the light footprint; the core and mining targets keep their original size.
+// View-depth attenuation shares the perspective sizing metric, so orbiting does not
+// detach the halo or make it jump. These constants tune glow without moving stars.
+const GLOW_EXTENT=1.6;
+const GLOW_NEAR_DEPTH=12, GLOW_FAR_DEPTH=65, GLOW_FAR_GAIN=.55;
 
 const VERTEX=`
 attribute vec3 aFrom; attribute vec3 aTo; attribute vec2 aCorner;
@@ -10,17 +16,24 @@ uniform mat4 uVP; uniform vec2 uViewport; uniform float uPixelRatio;
 uniform float uTime; uniform float uMotion;
 uniform float uOpacity; uniform float uOffsetX;
 varying vec2 vCorner; varying vec3 vColor; varying float vAlpha; varying float vType;
+varying float vGlow;
 void main(){
  vec3 offset=vec3(uOffsetX,0.,0.);
  vec4 start=uVP*vec4(aFrom+offset,1.);
  vec4 end=uVP*vec4(aTo+offset,1.);
- vCorner=aCorner; vColor=aColor; vType=aStyle.x;
+ vCorner=aCorner; vColor=aColor; vType=aStyle.x; vGlow=0.;
  float twinkle=1.-uMotion*(.08+.08*sin(uTime*.9+aStyle.z));
  vAlpha=twinkle*uOpacity;
  if(aStyle.x<.5){
+  // Reuse each star's stable phase as a seed: no new attributes or CPU updates.
+  float energy=mix(.82,1.,fract(aStyle.z*2.417));
+  float frequency=mix(.45,.85,fract(aStyle.z*1.618));
+  float shimmer=1.-uMotion*(.04+.04*sin(uTime*frequency+aStyle.z));
+  vAlpha=energy*shimmer*uOpacity;
+  vGlow=mix(1.,${GLOW_FAR_GAIN.toFixed(2)},smoothstep(${GLOW_NEAR_DEPTH.toFixed(1)},${GLOW_FAR_DEPTH.toFixed(1)},start.w));
   float size=clamp(aStyle.y*uViewport.y/max(.1,start.w)/uPixelRatio,${STAR_MIN_PIXELS}.,${STAR_MAX_PIXELS}.)*uPixelRatio;
   gl_Position=start;
-  gl_Position.xy+=aCorner*size/uViewport*start.w;
+  gl_Position.xy+=aCorner*size*${GLOW_EXTENT.toFixed(2)}/uViewport*start.w;
  }else{
   vec2 direction=(end.xy/max(.1,end.w)-start.xy/max(.1,start.w))*uViewport;
   vec2 normal=vec2(-direction.y,direction.x)/max(.001,length(direction));
@@ -35,19 +48,28 @@ void main(){
 const FRAGMENT=`
 precision mediump float;
 varying vec2 vCorner; varying vec3 vColor; varying float vAlpha; varying float vType;
+varying float vGlow;
 void main(){
  float a;
+ vec3 color=vColor;
  if(vType<.5){
-  vec2 d=abs(vCorner);
-  float halo=(1.-smoothstep(.35,1.,max(d.x,d.y)))*.18;
-  float rays=(1.-smoothstep(.13,.3,min(d.x,d.y)))*(1.-smoothstep(.5,1.,max(d.x,d.y)))*.4;
-  float core=(1.-smoothstep(.18,.36,max(d.x,d.y)))*.75;
-  a=halo+rays+core;
+  // Work in the original star's coordinates: enlarging the quad must not blur
+  // or enlarge its pixel core. A narrow square edge preserves the 8-bit shape.
+  vec2 p=vCorner*${GLOW_EXTENT.toFixed(2)},d=abs(p);
+  float square=max(d.x,d.y);
+  float core=1.-smoothstep(.24,.32,square);
+  float hot=1.-smoothstep(.06,.26,square);
+  // Exponential radial falloff, gently cut to zero before the quad boundary.
+  // Short cross rays keep the faint halo from reading as a circular light blob.
+  float halo=exp2(-3.5*dot(p,p))*(1.-smoothstep(1.1,${GLOW_EXTENT.toFixed(2)},square))*.24;
+  float rays=(1.-smoothstep(.10,.23,min(d.x,d.y)))*(1.-smoothstep(.28,1.15,square))*.28;
+  a=core*.86+(halo+rays)*vGlow;
+  color=mix(vColor,vec3(1.,.98,.93),hot*.72);
  }else{
   a=1.-smoothstep(.15,1.,abs(vCorner.y));
   a*=pow((vCorner.x+1.)*.5,2.);
  }
- gl_FragColor=vec4(vColor,min(.95,a*vAlpha));
+ gl_FragColor=vec4(color,min(.95,a*vAlpha));
 }`;
 
 const CORNERS=[[-1,-1],[1,-1],[1,1],[-1,-1],[1,1],[-1,1]];
