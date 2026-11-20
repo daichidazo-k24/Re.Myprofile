@@ -5,7 +5,7 @@ import {toggleSound} from './audio.js';
 import {scrollBoard,scrollToStart,scrollToEnd} from './board-scroll.js';
 import {castFishingLine} from '../fishing/ui.js';
 import {isGalleryOverlayActive} from './gallery.js';
-import {rotateWorld,zoomWorld,panWorld,resetWorldCamera} from './orbit-camera.js';
+import {rotateWorld,zoomWorld,panWorld,resetWorldCamera,telescopeLookSensitivity} from './orbit-camera.js';
 import {approachLadder,climbLadder,descendLadder,stopViewing} from '../scene/observatory.js';
 
 /** World mode: click/drag, touch gestures and trackpad update the actual camera.
@@ -65,7 +65,10 @@ export function bindControls(intro){
    if(state.observatoryPhase!=='ground'){
     if(event.key==='ArrowDown'&&!state.cameraUnlocked){event.preventDefault();descendLadder();return}
     if(!state.cameraUnlocked){if(event.key.startsWith('Arrow'))event.preventDefault();return}
-    if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();rotateWorld(event.key==='ArrowLeft'?-.12:.12,0);return}
+    if(event.key.startsWith('Arrow')){
+     event.preventDefault();const step=.12*telescopeLookSensitivity();
+     rotateWorld(event.key==='ArrowLeft'?-step:event.key==='ArrowRight'?step:0,event.key==='ArrowUp'?step:event.key==='ArrowDown'?-step:0);return;
+    }
     if(['PageDown','PageUp',' ','Enter','z','Z'].includes(event.key)){event.preventDefault();return}
    }
    if(['ArrowRight','ArrowLeft','PageDown','PageUp',' '].includes(event.key)){
@@ -110,7 +113,7 @@ export function bindControls(intro){
    const currentDistance=distance();
    if(pinchDistance!==null&&currentDistance!==null)zoomWorld((pinchDistance-currentDistance)*1.8);
    pinchDistance=currentDistance;
-  }else if(state.observatoryPhase==='viewing'){rotateWorld(dx*.004,-dy*.004)}
+  }else if(state.observatoryPhase==='viewing'){const sensitivity=.004*telescopeLookSensitivity();rotateWorld(dx*sensitivity,-dy*sensitivity)}
   else if(event.shiftKey){panWorld(-dx*.013,dy*.013)}
   else rotateWorld(-dx*.006,-dy*.0052);
   if(event.cancelable)event.preventDefault();
@@ -123,6 +126,10 @@ export function bindControls(intro){
  document.addEventListener('pointerup',endPointer,true);
  document.addEventListener('pointercancel',endPointer,true);
  document.addEventListener('click',event=>{
+  // Looking through the eyepiece must not activate a board behind the view.
+  if(state.observatoryPhase==='viewing'&&event.target instanceof Element&&event.target.closest('.css3d-stage,#worldCanvas')){
+   event.preventDefault();event.stopImmediatePropagation();return;
+  }
   if(performance.now()<=justDraggedUntil && event.target instanceof Element &&
      event.target.closest('.css3d-stage,#worldCanvas')){
    event.preventDefault();event.stopImmediatePropagation();justDraggedUntil=0;
@@ -143,7 +150,7 @@ export function bindControls(intro){
   const unit=event.deltaMode===1?16:event.deltaMode===2?560:1;
   // Trackpads: two-finger movement orbits. Pinch is ctrl+wheel.
   if(event.ctrlKey||event.altKey)zoomWorld(event.deltaY*unit);
-  else if(state.observatoryPhase==='viewing')rotateWorld(event.deltaX*unit*.0023,-event.deltaY*unit*.0023);
+  else if(state.observatoryPhase==='viewing')zoomWorld(event.deltaY*unit);
   else if(event.shiftKey){panWorld(-event.deltaY*unit*.008,-event.deltaX*unit*.008)}
   else rotateWorld(-(event.deltaX*unit)*.0023,-(event.deltaY*unit)*.0023);
  },{passive:false});

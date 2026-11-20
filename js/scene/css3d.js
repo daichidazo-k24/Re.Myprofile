@@ -14,6 +14,7 @@ import {skyDomeDirection} from './sky-dome.js';
 import {OBSERVATORY,updateObservatory} from './observatory.js';
 import {syncObservatoryUI,positionObservatoryHotspots} from '../ui/observatory.js';
 import {worldCameraPose,telescopeFov,cssTelescopeView} from '../ui/orbit-camera.js';
+import {WORLD_CAMERA} from './camera-settings.js';
 
 const CSS_SCALE=.674;
 export function startCSS3D(){
@@ -115,10 +116,11 @@ export function startCSS3D(){
   // a DOM sibling of its board, hence inherits the identical stage rotation.
   const f=state.focusMix;
   const yawDeg=(-state.orbitYaw*180/Math.PI)*(1-f)+(-2)*f;
-  const pitchDeg=(state.orbitPitch*180/Math.PI)*(1-f)+1.2*f;
+  const pitchDeg=(-state.orbitPitch*180/Math.PI)*(1-f)+1.2*f;
   const zoom=(17.5-state.orbitDistance)*41*(1-f);
   const z=(state.entered?35:-360)*(1-f)+(state.entered?90:-140)*f+zoom;
-  const y=(state.entered?0:-12)*(1-f)+113*f -state.orbitPanY*48*(1-f)+state.observatoryHeight*(800/STEP)*baseScale;
+  const cameraLift=WORLD_CAMERA.targetHeight+WORLD_CAMERA.distance*Math.sin(WORLD_CAMERA.pitch)-2.65;
+  const y=((state.entered?0:-12)+cameraLift*(800/STEP)*baseScale)*(1-f)+113*f -state.orbitPanY*48*(1-f)+state.observatoryHeight*(800/STEP)*baseScale;
   const panOffset=state.orbitPanX*59*(1-f);
   const stageX=state.cameraX/STEP*800;
   if(state.observatoryPhase==='viewing'){

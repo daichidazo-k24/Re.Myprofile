@@ -4,6 +4,7 @@
 import {state} from '../state.js';
 import {TELESCOPE_EYE} from '../scene/observatory-layout.js';
 import {M} from '../scene/math.js';
+import {WORLD_CAMERA,TELESCOPE_OPTICS} from '../scene/camera-settings.js';
 export const CAMERA_LIMITS=Object.freeze({yaw:1.36,minPitch:-.21,maxPitch:1.27,minDistance:9,maxDistance:43,maxPan:4.4});
 const orbitClamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 export function rotateWorld(dx,dy){
@@ -17,6 +18,9 @@ export function rotateWorld(dx,dy){
 }
 export function zoomWorld(delta){
  if(!state.cameraUnlocked)return;
+ if(state.observatoryPhase==='viewing'){
+  state.telescopeFovDegrees=orbitClamp(state.telescopeFovDegrees*Math.exp(delta*.0012),TELESCOPE_OPTICS.minFov,TELESCOPE_OPTICS.maxFov);return;
+ }
  state.orbitDistance=orbitClamp(state.orbitDistance*Math.exp(delta*.0012),CAMERA_LIMITS.minDistance,CAMERA_LIMITS.maxDistance);
 }
 export function panWorld(dx,dy){
@@ -25,7 +29,8 @@ export function panWorld(dx,dy){
  state.orbitPanY=orbitClamp(state.orbitPanY+dy,-CAMERA_LIMITS.maxPan,CAMERA_LIMITS.maxPan);
 }
 export function resetWorldCamera(){
- state.orbitYaw=0;state.orbitPitch=0;state.orbitDistance=17.5;
+ state.orbitYaw=0;state.orbitPitch=WORLD_CAMERA.pitch;state.orbitDistance=WORLD_CAMERA.distance;
+ state.telescopeFovDegrees=TELESCOPE_OPTICS.defaultFov;
  state.orbitPanX=0;state.orbitPanY=0;
 }
 export function worldCameraPose(stageX){
@@ -34,12 +39,19 @@ export function worldCameraPose(stageX){
   const eye=[...TELESCOPE_EYE],cp=Math.cos(p);
   return {eye,target:[eye[0]+Math.sin(y)*cp,eye[1]+Math.sin(p),eye[2]-Math.cos(y)*cp]};
  }
- const target=[stageX+panX,2.65+panY+state.observatoryHeight,-1.55];
+ const target=[stageX+panX,WORLD_CAMERA.targetHeight+panY+state.observatoryHeight,-1.55];
  const cp=Math.cos(p);
  const eye=[target[0]+d*cp*Math.sin(y),target[1]+d*Math.sin(p),target[2]+d*cp*Math.cos(y)];
  return {target,eye};
 }
-export function telescopeFov(){return orbitClamp(56*state.orbitDistance/17.5,28,90)*Math.PI/180}
+export function telescopeFov(){return orbitClamp(state.telescopeFovDegrees,TELESCOPE_OPTICS.minFov,TELESCOPE_OPTICS.maxFov)*Math.PI/180}
+export function telescopeMagnification(){return Math.tan(TELESCOPE_OPTICS.referenceFov*Math.PI/360)/Math.tan(telescopeFov()/2)}
+export function setTelescopeMagnification(value){
+ if(!state.cameraUnlocked||state.observatoryPhase!=='viewing'||!Number.isFinite(value))return;
+ const magnification=orbitClamp(value,TELESCOPE_OPTICS.minMagnification,TELESCOPE_OPTICS.maxMagnification);
+ state.telescopeFovDegrees=2*Math.atan(Math.tan(TELESCOPE_OPTICS.referenceFov*Math.PI/360)/magnification)*180/Math.PI;
+}
+export function telescopeLookSensitivity(){return Math.tan(telescopeFov()/2)/Math.tan(TELESCOPE_OPTICS.referenceFov*Math.PI/360)}
 
 /** Convert CSS scene pixels (Y down) into the same first-person world camera. */
 export function cssTelescopeView(eye,target,height,units){

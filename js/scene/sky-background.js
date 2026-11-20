@@ -32,17 +32,17 @@ void main(){
  vec3 direction=normalize(origin+ray*distance);
  vec2 cell,local;
  vec3 p=pixelDirection(direction,cell,local);
- float density,ridge;
- vec3 tint=auroraField(p,uTime,density,ridge);
+ float density,ridge,glow;
+ vec3 tint=auroraField(p,uTime,density,ridge,glow);
  // Ordered density, not animated noise: sparse square light dissolves into black.
  float threshold=ditherThreshold(cell);
  float ink=smoothstep(threshold-.035,threshold+.035,density);
  float halfSize=mix(.14,.48,smoothstep(.05,.94,density));
  float square=1.-smoothstep(halfSize-.025,halfSize+.025,max(abs(local.x),abs(local.y)));
  vec3 color=vec3(.001,.002,.006);
- color+=tint*square*ink*(.58+.42*sqrt(density));
- // Only the brightest ridge has a trace of emitted light between its pixels.
- color+=tint*ridge*ridge*.045;
+ color+=tint*square*ink*(.7+.5*sqrt(density));
+ // Soft light around the curtains keeps the pixel cores crisp and stars visible.
+ color+=tint*(glow*.28+ridge*ridge*.12);
  color*=mix(1.,.65,uFocus);
  gl_FragColor=vec4(color,1.);
 }

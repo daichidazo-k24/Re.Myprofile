@@ -1,14 +1,20 @@
 import {state} from '../state.js';
 import {OBSERVATORY,approachLadder,climbLadder,descendLadder,useTelescope,stopViewing} from '../scene/observatory.js';
+import {setTelescopeMagnification,telescopeMagnification} from './orbit-camera.js';
 
-let panel,ladderButton,telescopeButton,lastStatus='',lastUIKey='';
+let panel,ladderButton,telescopeButton,zoomControl,zoomSlider,lastStatus='',lastUIKey='';
 export function installObservatoryUI(){
  panel=document.createElement('div');panel.className='observatory-panel';panel.hidden=true;
- panel.innerHTML='<p role="status" aria-live="polite"></p><button type="button" data-observe="climb">↑ 梯子を上る</button><button type="button" data-observe="stop">見回しを終了</button><button type="button" data-observe="descend">↓ 梯子を下りる</button>';
+ panel.innerHTML='<p role="status" aria-live="polite"></p><button type="button" data-observe="climb" aria-label="上矢印キーで梯子を上る">↑ 上る</button><button type="button" data-observe="stop" aria-label="望遠鏡を閉じる。Escキーでも戻れます">戻る <kbd>Esc</kbd></button><button type="button" data-observe="descend" aria-label="下矢印キーで梯子を下りる">↓ 下りる</button>';
  panel.querySelector('[data-observe="climb"]').addEventListener('click',climbLadder);
  panel.querySelector('[data-observe="stop"]').addEventListener('click',stopViewing);
  panel.querySelector('[data-observe="descend"]').addEventListener('click',descendLadder);
  document.body.appendChild(panel);
+ zoomControl=document.createElement('div');zoomControl.className='telescope-zoom';zoomControl.hidden=true;
+ zoomControl.innerHTML='<label for="telescopeZoom">倍率</label><output for="telescopeZoom" aria-label="現在の倍率">1.0×</output><span aria-hidden="true">3×</span><input id="telescopeZoom" type="range" min="1" max="3" step="0.01" value="1" aria-orientation="vertical" aria-valuetext="1.0倍"><span aria-hidden="true">1×</span>';
+ zoomSlider=zoomControl.querySelector('input');
+ zoomSlider.addEventListener('input',()=>setTelescopeMagnification(Number(zoomSlider.value)));
+ document.body.appendChild(zoomControl);
  ladderButton=document.createElement('button');ladderButton.type='button';ladderButton.className='observatory-hotspot ladder-hotspot';ladderButton.hidden=true;
  ladderButton.textContent='梯子へ';ladderButton.addEventListener('click',approachLadder);
  telescopeButton=document.createElement('button');telescopeButton.type='button';telescopeButton.className='observatory-hotspot telescope-hotspot';telescopeButton.hidden=true;
@@ -20,15 +26,20 @@ export function syncObservatoryUI(){
  if(!panel)return;
  const phase=state.observatoryPhase;
  const arrived=Math.abs(state.cameraX-OBSERVATORY.x)<.3;
- const key=[phase,state.entered,state.focused,state.atLadder,state.cameraUnlocked,arrived].join(':');
+ const key=[phase,state.entered,state.focused,state.atLadder,state.cameraUnlocked,arrived,state.telescopeFovDegrees].join(':');
  if(key===lastUIKey)return;lastUIKey=key;
  panel.hidden=!state.entered||state.focused||!state.atLadder;
- const messages={ground:arrived?'↑ キーで梯子を上る · ← → で移動':'梯子へ移動中',climbing:'展望台へ上っています',top:'望遠鏡をクリックして、あたりを見渡す',viewing:'FPS VIEW · ドラッグ / 矢印キーで見回す · Esc で戻る',descending:'梯子を下りています'};
+ const messages={ground:arrived?'↑ キーで梯子を上る · ← → で移動':'梯子へ移動中',climbing:'展望台へ上っています',top:'望遠鏡をクリックしてのぞく。↓ キーで下りる',viewing:'望遠鏡をのぞいています。ドラッグや矢印キーで見回す。ホイールやピンチで拡大。Esc で戻る',descending:'梯子を下りています'};
  const status=messages[phase];if(status!==lastStatus){panel.querySelector('p').textContent=status;lastStatus=status}
  panel.querySelector('[data-observe="climb"]').hidden=phase!=='ground';
  panel.querySelector('[data-observe="climb"]').disabled=!arrived;
  panel.querySelector('[data-observe="stop"]').hidden=phase!=='viewing';
- panel.querySelector('[data-observe="descend"]').hidden=!['top','viewing'].includes(phase);
+ panel.querySelector('[data-observe="descend"]').hidden=phase!=='top';
+ zoomControl.hidden=panel.hidden||phase!=='viewing';
+ const magnification=telescopeMagnification();
+ zoomControl.querySelector('output').textContent=`${magnification.toFixed(1)}×`;
+ zoomSlider.value=String(magnification);
+ zoomSlider.setAttribute('aria-valuetext',`${magnification.toFixed(1)}倍`);
  document.body.classList.toggle('is-at-ladder',state.atLadder);
  document.body.classList.toggle('is-observing',phase!=='ground');
  document.body.classList.toggle('is-telescope-view',phase==='viewing');

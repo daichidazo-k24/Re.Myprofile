@@ -2,9 +2,9 @@
  * The CPU sampler also generates the no-WebGL panorama from the same art settings. */
 export const AURORA_GRID=384;
 export const AURORA_CYCLE_SECONDS=80;
-const WARM=[[1,.025,.11],[1,.08,.52]];
-const COOL=[[.08,.22,1],[.22,.94,1]];
-const GOLD=[1,.55,.12],ICE=[.48,1,.9];
+const WARM=[[.72,.15,1],[1,.32,.68]];
+const COOL=[[.12,.52,1],[.26,1,.78]];
+const GOLD=[1,.76,.58],ICE=[.68,.95,1];
 const NORMALS=[[-.15,1,-.22],[-.40,.80,-.44],[.16,.95,-.28]].map(v=>{
  const length=Math.hypot(...v);return v.map(n=>n/length);
 });
@@ -17,20 +17,22 @@ const vector=v=>`vec3(${v.map(n=>Number(n).toFixed(8)).join(',')})`;
 
 export function sampleAurora(p,time=0){
  const wave=.065*Math.sin(dot(p,[4,2,5])+time*.13)+.028*Math.sin(dot(p,[-9,1,7])-time*.09);
- const arc=dot(p,NORMALS[0])-.26+wave;
- const crossing=dot(p,NORMALS[1])-.44-wave*.7+.035*Math.sin(p[0]*13+p[2]*8+time*.11);
- const crown=dot(p,NORMALS[2])-.72+wave*.55;
+ const arc=dot(p,NORMALS[0])-.43+wave;
+ const crossing=dot(p,NORMALS[1])-.57-wave*.7+.035*Math.sin(p[0]*13+p[2]*8+time*.11);
+ const crown=dot(p,NORMALS[2])-.82+wave*.55;
  const folds=.5+.5*Math.sin(dot(p,[54,5,-19])+Math.sin(p[0]*13+p[2]*9)*2+time*.22);
- const ridge=Math.max(falloff(arc,.012),falloff(crossing,.014)*.9,falloff(crown,.012)*.8);
- const veil=falloff(arc-.065,.083)*(.24+.28*folds)
-  +falloff(crossing-.05,.065)*(.17+.18*folds)+falloff(crown-.04,.055)*.22;
- const upper=smooth(-.25,.08,p[1]);
- const density=clamp((ridge*.92+veil*.72)*upper);
+ const filaments=.5+.5*Math.sin(dot(p,[112,6,-38])+folds*3+time*.16);
+ const ridge=Math.max(falloff(arc,.018),falloff(crossing,.019)*.95,falloff(crown,.016)*.88);
+ const veil=falloff(arc-.08,.12)*(.26+.3*folds+.12*filaments)
+  +falloff(crossing-.065,.095)*(.2+.22*folds)+falloff(crown-.05,.075)*.28;
+ const upper=smooth(-.08,.18,p[1]);
+ const density=clamp((ridge+veil*.84)*upper);
+ const glow=(falloff(arc,.11)*.34+falloff(crossing,.10)*.24+falloff(crown,.09)*.2)*upper;
  const cycle=.5-.5*Math.cos(time*Math.PI*2/AURORA_CYCLE_SECONDS);
  const variation=.5+.5*Math.sin(dot(p,[3,1.5,-2.2])+time*.035);
  const tint=mix(mix(WARM[0],WARM[1],variation),mix(COOL[0],COOL[1],variation),cycle);
- const color=mix(tint,mix(GOLD,ICE,cycle),ridge**5*.45);
- return {density,ridge:ridge*upper,color};
+ const color=mix(tint,mix(GOLD,ICE,cycle),ridge**4*.62);
+ return {density,ridge:ridge*upper,glow,color};
 }
 
 export const AURORA_STYLE_GLSL=`
@@ -51,23 +53,25 @@ vec3 pixelDirection(vec3 d,out vec2 cell,out vec2 local){
 }
 float bayer2(vec2 p){p=mod(floor(p),2.);return 2.*p.x+3.*p.y-4.*p.x*p.y;}
 float ditherThreshold(vec2 cell){return (4.*bayer2(cell)+bayer2(floor(cell*.5))+.5)/16.;}
-vec3 auroraField(vec3 p,float t,out float density,out float ridge){
+vec3 auroraField(vec3 p,float t,out float density,out float ridge,out float glow){
  float wave=.065*sin(dot(p,vec3(4.,2.,5.))+t*.13)+.028*sin(dot(p,vec3(-9.,1.,7.))-t*.09);
- float arc=dot(p,${vector(NORMALS[0])})-.26+wave;
- float crossing=dot(p,${vector(NORMALS[1])})-.44-wave*.7+.035*sin(p.x*13.+p.z*8.+t*.11);
- float crown=dot(p,${vector(NORMALS[2])})-.72+wave*.55;
+ float arc=dot(p,${vector(NORMALS[0])})-.43+wave;
+ float crossing=dot(p,${vector(NORMALS[1])})-.57-wave*.7+.035*sin(p.x*13.+p.z*8.+t*.11);
+ float crown=dot(p,${vector(NORMALS[2])})-.82+wave*.55;
  float folds=.5+.5*sin(dot(p,vec3(54.,5.,-19.))+sin(p.x*13.+p.z*9.)*2.+t*.22);
- ridge=max(falloff(arc,.012),max(falloff(crossing,.014)*.9,falloff(crown,.012)*.8));
- float veil=falloff(arc-.065,.083)*(.24+.28*folds)
-  +falloff(crossing-.05,.065)*(.17+.18*folds)+falloff(crown-.04,.055)*.22;
- float upper=smoothstep(-.25,.08,p.y);
- density=clamp((ridge*.92+veil*.72)*upper,0.,1.);
+ float filaments=.5+.5*sin(dot(p,vec3(112.,6.,-38.))+folds*3.+t*.16);
+ ridge=max(falloff(arc,.018),max(falloff(crossing,.019)*.95,falloff(crown,.016)*.88));
+ float veil=falloff(arc-.08,.12)*(.26+.3*folds+.12*filaments)
+  +falloff(crossing-.065,.095)*(.2+.22*folds)+falloff(crown-.05,.075)*.28;
+ float upper=smoothstep(-.08,.18,p.y);
+ density=clamp((ridge+veil*.84)*upper,0.,1.);
+ glow=(falloff(arc,.11)*.34+falloff(crossing,.10)*.24+falloff(crown,.09)*.2)*upper;
  float cycle=.5-.5*cos(t*${(Math.PI*2/AURORA_CYCLE_SECONDS).toFixed(10)});
  float variation=.5+.5*sin(dot(p,vec3(3.,1.5,-2.2))+t*.035);
  vec3 warm=mix(${vector(WARM[0])},${vector(WARM[1])},variation);
  vec3 cool=mix(${vector(COOL[0])},${vector(COOL[1])},variation);
  vec3 tint=mix(warm,cool,cycle);
- vec3 color=mix(tint,mix(${vector(GOLD)},${vector(ICE)},cycle),pow(ridge,5.)*.45);
+ vec3 color=mix(tint,mix(${vector(GOLD)},${vector(ICE)},cycle),pow(ridge,4.)*.62);
  ridge*=upper;
  return color;
 }

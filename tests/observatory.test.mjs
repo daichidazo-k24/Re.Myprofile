@@ -4,7 +4,8 @@ import {state} from '../js/state.js';
 import {OBSERVATORY,approachLadder,climbLadder,descendLadder,useTelescope,stopViewing,leaveObservatory,updateObservatory} from '../js/scene/observatory.js';
 import {rotateWorld,zoomWorld,panWorld,worldCameraPose} from '../js/ui/orbit-camera.js';
 import {TELESCOPE_EYE} from '../js/scene/observatory-layout.js';
-import {telescopeFov,cssTelescopeView} from '../js/ui/orbit-camera.js';
+import {telescopeFov,telescopeMagnification,setTelescopeMagnification,telescopeLookSensitivity,cssTelescopeView,resetWorldCamera} from '../js/ui/orbit-camera.js';
+import {WORLD_CAMERA,TELESCOPE_OPTICS} from '../js/scene/camera-settings.js';
 import {M} from '../js/scene/math.js';
 beforeEach(()=>{leaveObservatory();Object.assign(state,{entered:true,focused:false,cameraX:0,reduceMotion:false})});
 function reachTop(){approachLadder();state.cameraX=OBSERVATORY.x;climbLadder();for(let i=0;i<60;i++)updateObservatory(.05)}
@@ -19,7 +20,7 @@ test('climbing requires arrival at the ladder and raises the camera with the pla
  assert.equal(useTelescope(),false);
  for(let i=0;i<60;i++)updateObservatory(.05);
  assert.equal(state.observatoryPhase,'top');assert.equal(state.cameraUnlocked,false);
- assert.equal(worldCameraPose(OBSERVATORY.x).target[1],2.65+OBSERVATORY.height);
+ assert.equal(worldCameraPose(OBSERVATORY.x).target[1],WORLD_CAMERA.targetHeight+OBSERVATORY.height);
 });
 test('only telescope unlocks the camera; exiting and descending restore the fixed view',()=>{
  reachTop();const fixed=worldCameraPose(OBSERVATORY.x);assert.equal(useTelescope(),true);const before=worldCameraPose(OBSERVATORY.x);
@@ -29,10 +30,30 @@ test('only telescope unlocks the camera; exiting and descending restore the fixe
  for(let i=0;i<60;i++)updateObservatory(.05);
  assert.equal(state.observatoryHeight,0);assert.equal(state.observatoryPhase,'ground');
 });
-test('map camera faces straight ahead and ladder sits behind the board face',()=>{
+test('map camera stays frontal, slightly elevated and tilted upward',()=>{
  const pose=worldCameraPose(OBSERVATORY.x);
- assert.equal(pose.eye[0],pose.target[0]);assert.equal(pose.eye[1],pose.target[1]);
+ assert.equal(pose.eye[0],pose.target[0]);
+ assert.ok(pose.eye[1]>2.65&&pose.eye[1]<3.5,'slightly higher than the previous map view');
+ assert.ok(pose.target[1]>pose.eye[1],'looks upward without introducing lateral yaw');
  assert.ok(OBSERVATORY.z< -1.55);
+});
+test('telescope opens at default magnification, caps all zoom at 3x, and resets on reentry',()=>{
+ reachTop();useTelescope();
+ assert.equal(state.telescopeFovDegrees,56);
+ assert.equal(telescopeMagnification(),1);
+ const sensitivity=telescopeLookSensitivity(),eye=worldCameraPose(0).eye;
+ zoomWorld(-99999);assert.equal(state.telescopeFovDegrees,TELESCOPE_OPTICS.minFov);
+ assert.ok(Math.abs(telescopeMagnification()-3)<1e-12);
+ assert.ok(telescopeLookSensitivity()<sensitivity,'high magnification needs finer motion');
+ zoomWorld(99999);assert.equal(state.telescopeFovDegrees,TELESCOPE_OPTICS.maxFov);
+ assert.equal(telescopeMagnification(),1);
+ setTelescopeMagnification(2.5);assert.ok(Math.abs(telescopeMagnification()-2.5)<1e-12);
+ setTelescopeMagnification(10);assert.ok(Math.abs(telescopeMagnification()-3)<1e-12);
+ setTelescopeMagnification(-10);assert.equal(telescopeMagnification(),1);
+ setTelescopeMagnification(NaN);assert.equal(telescopeMagnification(),1);
+ assert.deepEqual(worldCameraPose(0).eye,eye);
+ resetWorldCamera();assert.equal(state.telescopeFovDegrees,56);
+ setTelescopeMagnification(3);stopViewing();useTelescope();assert.equal(telescopeMagnification(),1);
 });
 test('telescope is first person: full-circle look and zoom never move the eye',()=>{
  reachTop();useTelescope();const before=worldCameraPose(0);assert.deepEqual(before.eye,TELESCOPE_EYE);
