@@ -112,27 +112,27 @@ test('glowing stars retain the world geometry and camera projection used by the 
    assert.deepEqual(bridge.targets,expected.targets,'halo extent does not change debris destinations or sizes');
   }
  }
- assert.equal(gl.uploads.length,2,'moving the camera and glow never rebuilds geometry');
+ assert.equal(gl.uploads.length,1,'moving the camera and glow never rebuilds geometry');
  sky.destroy();
 });
 
-test('one sky batch for every stage, no per-frame uploads, at most one extra meteor draw',()=>{
+test('one static star batch for every stage, with the meteor handled by the background renderer',()=>{
  const gl=fakeGL(),bridge=createMiningSkyBridge(),sky=createSkyRenderer(gl,bridge),vp=M.id();
- assert.equal(bridge.available,true);assert.equal(gl.uploads.length,2);
+ assert.equal(bridge.available,true);assert.equal(gl.uploads.length,1);
  const state={active:0,entered:true,reduceMotion:false};
  for(let stage=0;stage<STAGES.length;stage++){
   state.active=stage;
   for(let i=0;i<60;i++)sky.draw(vp,state,2+i/60,1/60,1440,900,900);
  }
  assert.equal(gl.draws.length,360,'no stage-specific geometry or connecting lines');
- assert.equal(gl.uploads.length,2,'no geometry transfer after initialization');
+ assert.equal(gl.uploads.length,1,'no geometry transfer after initialization');
  assert.ok(gl.draws.every(d=>d.count===SKY_STAR_COUNT*6&&d.uOffsetX===0),'sky stays fixed in world space');
  state.reduceMotion=true;sky.draw(vp,state,9.5,.016,1440,900,900);
  assert.equal(gl.draws.length,361,'no meteor under reduced motion');
  assert.equal(gl.draws.at(-1).uMotion,0);assert.equal(gl.draws.at(-1).uTime,0);assert.equal(gl.draws.at(-1).uOpacity,1);
- state.reduceMotion=false;sky.draw(vp,state,9.6,.016,1440,900,900);assert.equal(gl.draws.length,363,'at most two draws including a meteor');
+ state.reduceMotion=false;sky.draw(vp,state,9.6,.016,1440,900,900);assert.equal(gl.draws.length,362,'star renderer submits only its static star batch');
  assert.equal(gl.depthWrite,true);assert.equal(gl.enabled.size,0);
- sky.destroy();assert.equal(bridge.available,false);assert.equal(gl.deleted.length,2);
+ sky.destroy();assert.equal(bridge.available,false);assert.equal(gl.deleted.length,1);
 });
 
 test('sky integration has no HTML invalidation, readback, extra composition or new dependency',()=>{

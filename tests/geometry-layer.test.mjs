@@ -43,11 +43,12 @@ test('the rod is a connected chain and its tip shares the fishing-line attachmen
  assert.match(fallback,/M198 16 V208/);
 });
 
-test('the bottom-left instructions were deleted without removing stage navigation buttons',()=>{
+test('the bottom-left instructions and optional bottom controls are removed while stage navigation remains',()=>{
  const html=file('index.html');
  const css=file('css/focus.css');
  assert.doesNotMatch(html,/controller-hint/);
  assert.match(html,/class="chapter-dock"/);
- assert.match(html,/id="focusBtn"/);
+ assert.match(html,/id="replayBtn"/);
+ assert.doesNotMatch(html,/id="focusBtn"|id="soundBtn"/);
  assert.match(css,/\.bottom-hud\{justify-content:flex-end\}/);
 });
