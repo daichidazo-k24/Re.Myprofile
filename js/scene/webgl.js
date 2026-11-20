@@ -7,7 +7,7 @@ import {drawFishingWorld,FISH_WORLD} from '../fishing/scene.js';
 import {fishingState} from '../fishing/state.js';
 import {positionFishingHotspot} from '../fishing/ui.js';
 import {minerModel} from './miner-pose.js';
-import {worldCameraPose} from '../ui/orbit-camera.js';
+import {worldCameraPose,telescopeFov} from '../ui/orbit-camera.js';
 import {createSkyRenderer} from './sky.js';
 import {createSkyBackground} from './sky-background.js';
 import {createPlanetarium} from './planetarium.js';
@@ -15,6 +15,9 @@ import {createSkyCamera,updateSkyCamera} from './sky-camera.js';
 import {GRAPHIC_BOARD,createGraphicSign} from '../graphic/board.js';
 import {syncGraphicBoard} from '../graphic/ui.js';
 import {createNotebookMesh,NOTEBOOK_LABEL} from '../graphic/notebook.js';
+import {drawObservatory,updateObservatory} from './observatory.js';
+import {isObservatoryApproach} from './observatory-layout.js';
+import {syncObservatoryUI,positionObservatoryHotspots} from '../ui/observatory.js';
 
 export function startWebGL(state,onPageChange){
  const glCanvas=document.getElementById('worldCanvas');
@@ -63,7 +66,7 @@ export function startWebGL(state,onPageChange){
   });
  }
 function buildTerrain(){const a=[];const base=makeCube();function emit(x,y,z,sx,sy,sz,col){const [r,g,b]=hex(col);for(let k=0;k<base.length;k+=11){a.push(base[k]*sx+x,base[k+1]*sy+y,base[k+2]*sz+z,...base.slice(k+3,k+8),r,g,b)}}const cols=['#4b5b86','#48567b','#5e6e9c','#384767','#6677a4'];for(let st=0;st<STAGES.length-1;st++){let baseX=st*STEP;for(let x=-8;x<=8;x++)for(let z=-8;z<=6;z++){if(seeded(st*19+x,z)> .92 && z>3)continue;const c=cols[Math.floor(seeded(x,st*7+z)*cols.length)];let level=seeded(x*4+st,z*2)>.83?.08:0;emit(baseX+x*1.08,-.43+level,z*1.08,1.05,.66,1.05,c);if(seeded(x+44,z+st*36)>.965){emit(baseX+x*1.08,-.06,z*1.08,.6,.08,.6,'#e3a94d')}}}
- for(let z=-7;z<=5;z++)for(let st=0;st<STAGES.length-1;st++){let x=st*STEP-7.7;const h=1+Math.floor(seeded(st,z,22)*3);if(seeded(st,z)>.4)emit(x,h*.5,z*1.07,.9,h,.9,cols[(st+Math.abs(z))%5])}
+ for(let z=-7;z<=5;z++)for(let st=0;st<STAGES.length-1;st++){let x=st*STEP-7.7;const h=1+Math.floor(seeded(st,z,22)*3);if(seeded(st,z)>.4&&!isObservatoryApproach(x,z*1.07))emit(x,h*.5,z*1.07,.9,h,.9,cols[(st+Math.abs(z))%5])}
  return a}
 function draw(mesh_,model,color='#fff',tex=whiteTex,unlit=0,fog=1){gl.bindBuffer(gl.ARRAY_BUFFER,mesh_.buffer);const stride=44;for(const [name,size,offs] of [['aPos',3,0],['aNorm',3,12],['aUv',2,24],['aCol',3,32]]){const l=loc[name];gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,size,gl.FLOAT,false,stride,offs)}gl.uniformMatrix4fv(loc.uModel,false,model);const v=hex(color);gl.uniform4f(loc.uColor,v[0],v[1],v[2],1);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex||whiteTex);gl.uniform1f(loc.uUseTex,tex&&tex!==whiteTex?1:0);gl.uniform1f(loc.uUnlit,unlit);gl.uniform1f(loc.uFog,fog);gl.drawArrays(gl.TRIANGLES,0,mesh_.count)}
 function box(x,y,z,sx,sy,sz,color,ry=0,rx=0,rz=0){draw(cubeMesh,M.model(x,y,z,sx,sy,sz,ry,rx,rz),color)}
@@ -90,14 +93,14 @@ function board(i,t){const x=i*STEP,hover=Math.sin(t*1.4+i*.65)*.055,rot=.03*Math
 function drawVoxelMiner(i,t){const x=i*STEP-5.75;box(x,.30,2.3,2.35,.6,2.3,'#2b3962');box(x,.66,2.3,1.95,.18,1.95,'#6f85b3');box(x, .84,2.3,1.18,.18,1.2,'#e68b29');if(minerTex)draw(planeMesh,minerModel(i,t),'#ffffff',minerTex,1,0)
  for(let j=0;j<5;j++){const zz=-3.5+j*1.5;box(x-1.5+.3*Math.sin(t+j),1.25+seeded(j,i),zz,.35,.35,.35,j%2?'#f6ac45':'#81a8ef',t*(.3+j*.1))}}
 function drawStageProps(i,t){const x=i*STEP,fx=x+5.5;
- if(i===state.active)drawVoxelMiner(i,t);
+ if(i===state.active&&!state.atLadder)drawVoxelMiner(i,t);
  if(i===0){box(fx,.45,1.2,1.55,1.1,1.55,'#2c416c');box(fx,1.3,1.2,1,1,1,'#f68d1f',t*.8);box(fx,1.3,1.2, .5,.5,1.1,'#b8dbfa',t*.8);}
  if(i===1){for(let j=0;j<8;j++){const cx=fx+Math.sin(j*2.4)*1.1,cz=.5+Math.cos(j*2.4)*1.25,yy=1.7+Math.sin(t*1.2+j)*.25+j*.1;box(cx,yy,cz,.55,.55,.55,['#6c9ced','#f4ba69','#77d1ca'][j%3],t*(.2+j*.05));box(cx, .65,cz,.28,.8,.28,'#29436b')}box(fx,.25,1,3.4,.45,3.4,'#273756');}
  if(i===2){box(fx,1.03,1.2,3.4,1.1,3.2,'#2e406a');box(fx,2.18+Math.sin(t*.9)*.17,1.2,1.7,1.7,1.7,'#415e9a',t*.42);box(fx,2.2+Math.sin(t*.9)*.17,2.1,1.08,1.1,.15,'#ecab37',t*.42);box(fx,2.22+Math.sin(t*.9)*.17,2.22,.32,.35,.19,'#d4e3fc',t*.42);}
- if(i===3){for(let j=0;j<5;j++){const px=x+4.5+j*.53;const pz=2.8-j*.6;let h=.9+j*.4;box(px,h*.5,pz,.4,h,.4,j<3?'#314e85':'#f1a33e');box(px,h+.16,pz,.52,.18,.52,'#a9c2e8')}box(fx, .2,1.1,3,.45,3,'#283c66');}
+ if(i===3){for(let j=0;j<5;j++){const px=x+4.5+j*.53;const pz=2.8-j*.6;let h=.9+j*.4;if(isObservatoryApproach(px,pz))continue;box(px,h*.5,pz,.4,h,.4,j<3?'#314e85':'#f1a33e');box(px,h+.16,pz,.52,.18,.52,'#a9c2e8')}}
  if(i===4){for(let j=0;j<5;j++){const px=fx+Math.cos(j*1.256)*1.6,pz=1.1+Math.sin(j*1.256)*1.25;box(px,1.2+Math.sin(t*1.5+j)*.28,pz,.64,.64,.16,j===0?'#f68d1f':'#ecab37',t*.35+j*1.256);box(px,.37,pz,.8,.75,.8,'#3b4d73')}}
  // glowing crystals in world and guiding arrows
- for(let j=0;j<4;j++){const sign=j%2?-1:1;const px=x+sign*(7.05+((j>>1)*.8)),pz=(j>>1)*3.4-3.3;box(px,1.45+Math.sin(t+j)*.14,pz,.36,.72,.36,STAGES[i].color,t*.3+j*.6,.2);box(px,.6,pz,.55,1.15,.55,'#263d64')}
+ for(let j=0;j<4;j++){const sign=j%2?-1:1;const px=x+sign*(7.05+((j>>1)*.8)),pz=(j>>1)*3.4-3.3;if(isObservatoryApproach(px,pz))continue;box(px,1.45+Math.sin(t+j)*.14,pz,.36,.72,.36,STAGES[i].color,t*.3+j*.6,.2);box(px,.6,pz,.55,1.15,.55,'#263d64')}
 }
 
  const floaters=Array.from({length:80},(_,i)=>({offX:(seeded(i,33)-.5)*160,y:1+seeded(i,97)*12,z:-4-seeded(i,103)*20,size:.05+seeded(i,38)*.12,speed:.3+seeded(i,28)*1.5}));
@@ -111,6 +114,7 @@ function drawStageProps(i,t){const x=i*STEP,fx=x+5.5;
  function frame(ts){
   if(!running)return;const dt=Math.min(.045,(ts-lastTs)/1000||.016);lastTs=ts;
   const t=(ts-time0)/1000,ratio=viewport();
+  updateObservatory(dt);syncObservatoryUI();
   gl.clearColor(.025,.059,.125,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
   const responsiveness=state.reduceMotion?1:Math.min(1,dt*3.3);
   state.cameraX+=(state.aim-state.cameraX)*responsiveness;
@@ -126,7 +130,7 @@ function drawStageProps(i,t){const x=i*STEP,fx=x+5.5;
   const focusTarget=[cameraX,3.65,-1.55];
   const eye=worldPose.eye.map((v,i)=>v*(1-focusMix)+focusEye[i]*focusMix);
   const look=worldPose.target.map((v,i)=>v*(1-focusMix)+focusTarget[i]*focusMix);
-  const fov=((innerWidth<750?67:56)*(1-focusMix)+40*focusMix)*Math.PI/180;
+  const fov=state.observatoryPhase==='viewing'?telescopeFov():((innerWidth<750?67:56)*(1-focusMix)+40*focusMix)*Math.PI/180;
   const vWorld=M.mul(M.persp(fov,ratio,.1,120),M.look(eye,look));
   updateSkyCamera(skyCamera,eye,look,fov,ratio);
   gl.useProgram(program);gl.uniformMatrix4fv(loc.uVP,false,vWorld);gl.uniform3fv(loc.uEye,eye);
@@ -137,6 +141,13 @@ function drawStageProps(i,t){const x=i*STEP,fx=x+5.5;
    return;
   }
   draw(terrainMesh,M.id(),'#ffffff');
+  drawObservatory({box,quad},minerTex);
+  positionObservatoryHotspots(pos=>{
+   const w=vWorld[3]*pos[0]+vWorld[7]*pos[1]+vWorld[11]*pos[2]+vWorld[15];
+   if(w<=.05)return null;
+   return {x:((vWorld[0]*pos[0]+vWorld[4]*pos[1]+vWorld[8]*pos[2]+vWorld[12])/w+1)*innerWidth/2,
+    y:(1-(vWorld[1]*pos[0]+vWorld[5]*pos[1]+vWorld[9]*pos[2]+vWorld[13])/w)*innerHeight/2};
+  });
   for(let i=0;i<STAGES.length;i++){if(Math.abs(i*STEP-cameraX)>28)continue;if(STAGES[i].id==='fishing'){drawFishingWorld({box},t)}else{board(i,t);drawStageProps(i,t)}}
   const g=GRAPHIC_BOARD;
   if(Math.abs(g.x-cameraX)<28){

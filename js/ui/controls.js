@@ -6,6 +6,7 @@ import {scrollBoard,scrollToStart,scrollToEnd} from './board-scroll.js';
 import {castFishingLine} from '../fishing/ui.js';
 import {isGalleryOverlayActive} from './gallery.js';
 import {rotateWorld,zoomWorld,panWorld,resetWorldCamera} from './orbit-camera.js';
+import {approachLadder,climbLadder,descendLadder,stopViewing} from '../scene/observatory.js';
 
 /** World mode: click/drag, touch gestures and trackpad update the actual camera.
  * Focus mode: native scroll and links on the live HTML board stay interactive.
@@ -31,7 +32,7 @@ export function bindControls(intro){
   cameraToggle.setAttribute('aria-expanded',String(open));
  });
  document.querySelectorAll('[data-cam]').forEach(button=>button.addEventListener('click',()=>{
-  if(!state.entered||state.focused)return;
+  if(!state.entered||state.focused||!state.cameraUnlocked)return;
   const cmd=button.dataset.cam;
   if(cmd==='left')rotateWorld(-.18,0);
   if(cmd==='right')rotateWorld(.18,0);
@@ -45,10 +46,12 @@ export function bindControls(intro){
  window.addEventListener('keydown',event=>{
   if(isGalleryOverlayActive())return;
   if(event.key==='Escape'){
+   if(stopViewing()){event.preventDefault();return}
    if(state.focused){event.preventDefault();setFocus(false);return}
    closePad();return;
   }
-  if(event.target instanceof HTMLElement&&event.target.closest('a,button,input,textarea,select'))return;
+  if(event.target instanceof HTMLElement&&event.target.closest('input,textarea,select,[contenteditable="true"]'))return;
+  if(['Enter',' '].includes(event.key)&&event.target instanceof HTMLElement&&event.target.closest('a,button'))return;
   if(!state.entered){if(['ArrowRight','ArrowLeft','PageDown','PageUp',' ','Enter'].includes(event.key)){event.preventDefault();intro.finish()}return}
   if(state.focused){
    if(['ArrowDown','PageDown',' ','ArrowUp','PageUp','Home','End'].includes(event.key)){
@@ -59,10 +62,20 @@ export function bindControls(intro){
     return;
    }
   }else{
-   if(['ArrowRight','ArrowLeft','PageDown','PageUp',' '].includes(event.key)){
-    event.preventDefault();selectStage(state.active+(['ArrowLeft','PageUp'].includes(event.key)?-1:1));return;
+   if(state.observatoryPhase!=='ground'){
+    if(event.key==='ArrowDown'&&!state.cameraUnlocked){event.preventDefault();descendLadder();return}
+    if(!state.cameraUnlocked){if(event.key.startsWith('Arrow'))event.preventDefault();return}
+    if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();rotateWorld(event.key==='ArrowLeft'?-.12:.12,0);return}
+    if(['PageDown','PageUp',' ','Enter','z','Z'].includes(event.key)){event.preventDefault();return}
    }
-   if(event.key==='ArrowUp'){event.preventDefault();rotateWorld(0,.12);return}
+   if(['ArrowRight','ArrowLeft','PageDown','PageUp',' '].includes(event.key)){
+    event.preventDefault();
+    const direction=['ArrowLeft','PageUp'].includes(event.key)?-1:1;
+    if(state.atLadder){selectStage(direction<0?3:4);return}
+    if((state.active===3&&direction===1)||(state.active===4&&direction===-1)){approachLadder();return}
+    selectStage(state.active+direction);return;
+   }
+   if(event.key==='ArrowUp'){event.preventDefault();if(!climbLadder())rotateWorld(0,.12);return}
    if(event.key==='ArrowDown'){event.preventDefault();rotateWorld(0,-.12);return}
    if(['+','=','-','_'].includes(event.key)){
     event.preventDefault();zoomWorld(['+','='].includes(event.key)?-125:125);return;
@@ -82,14 +95,14 @@ export function bindControls(intro){
   const [a,b]=[...pointers.values()];return Math.hypot(a.x-b.x,a.y-b.y);
  };
  document.addEventListener('pointerdown',event=>{
-  if(isGalleryOverlayActive()||!state.entered||state.focused||ignoreTarget(event.target))return;
+  if(isGalleryOverlayActive()||!state.entered||state.focused||!state.cameraUnlocked||ignoreTarget(event.target))return;
   if(event.pointerType==='mouse'&&event.button!==0)return;
   pointers.set(event.pointerId,{x:event.clientX,y:event.clientY,shift:event.shiftKey});
   gestureMoved=false;pinchDistance=distance();
  },true);
  document.addEventListener('pointermove',event=>{
   if(!pointers.has(event.pointerId))return;
-  if(isGalleryOverlayActive()||!state.entered||state.focused){pointers.clear();return}
+  if(isGalleryOverlayActive()||!state.entered||state.focused||!state.cameraUnlocked){pointers.clear();return}
   const previous=pointers.get(event.pointerId),dx=event.clientX-previous.x,dy=event.clientY-previous.y;
   pointers.set(event.pointerId,{x:event.clientX,y:event.clientY,shift:event.shiftKey});
   if(Math.abs(dx)+Math.abs(dy)>.8){gestureMoved=true;justDraggedUntil=performance.now()+250}
@@ -97,7 +110,8 @@ export function bindControls(intro){
    const currentDistance=distance();
    if(pinchDistance!==null&&currentDistance!==null)zoomWorld((pinchDistance-currentDistance)*1.8);
    pinchDistance=currentDistance;
-  }else if(event.shiftKey){panWorld(-dx*.013,dy*.013)}
+  }else if(state.observatoryPhase==='viewing'){rotateWorld(dx*.004,-dy*.004)}
+  else if(event.shiftKey){panWorld(-dx*.013,dy*.013)}
   else rotateWorld(-dx*.006,-dy*.0052);
   if(event.cancelable)event.preventDefault();
  },{capture:true,passive:false});
@@ -129,6 +143,7 @@ export function bindControls(intro){
   const unit=event.deltaMode===1?16:event.deltaMode===2?560:1;
   // Trackpads: two-finger movement orbits. Pinch is ctrl+wheel.
   if(event.ctrlKey||event.altKey)zoomWorld(event.deltaY*unit);
+  else if(state.observatoryPhase==='viewing')rotateWorld(event.deltaX*unit*.0023,-event.deltaY*unit*.0023);
   else if(event.shiftKey){panWorld(-event.deltaY*unit*.008,-event.deltaX*unit*.008)}
   else rotateWorld(-(event.deltaX*unit)*.0023,-(event.deltaY*unit)*.0023);
  },{passive:false});

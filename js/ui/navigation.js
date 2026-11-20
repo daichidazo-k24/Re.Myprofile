@@ -4,6 +4,7 @@ import {state} from '../state.js';
 import {beep} from './audio.js';
 import {onBoardScroll,boardProgress} from './board-scroll.js';
 import {STAGE_LINKS} from './document.js';
+import {leaveObservatory} from '../scene/observatory.js';
 const $=id=>document.getElementById(id);
 const subscribers=new Set();
 const fire=(kind,stage)=>{for(const fn of subscribers)fn(kind,stage)};
@@ -29,11 +30,13 @@ export function renderNavigation(){
  document.querySelectorAll('.css3d-stage').forEach((el,j)=>{el.classList.toggle('is-miner-active',j===i);el.classList.toggle('is-focus-target',state.focused&&j===i)});
 }
 export function selectStage(index){
+ leaveObservatory();
  const next=Math.max(0,Math.min(STAGES.length-1,index));
+ state.aim=next*STEP;
  if(next===state.active){renderNavigation();return}
  if(STAGES[next].id==='fishing')state.focused=false;
  state.active=next;state.aim=next*STEP;renderNavigation();fire('stage',next);beep(370+next*65,.11);
 }
-export function setFocus(value){if(!state.entered||STAGES[state.active].id==='fishing')return;state.focused=!!value;renderNavigation();fire('focus',state.active);beep(state.focused?560:320,.12)}
+export function setFocus(value){if(!state.entered||STAGES[state.active].id==='fishing')return;if(state.atLadder){if(state.observatoryPhase!=='ground')return;leaveObservatory();state.aim=state.active*STEP}state.focused=!!value;renderNavigation();fire('focus',state.active);beep(state.focused?560:320,.12)}
 export const toggleFocus=()=>setFocus(!state.focused);
 onBoardScroll(index=>{if(index===state.active){/* scroll position shown on whiteboard itself */}});

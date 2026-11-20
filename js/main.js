@@ -11,10 +11,12 @@ import {startWebGL} from './scene/webgl.js';
 import {startCSS3D} from './scene/css3d.js';
 import {installFishingUI} from './fishing/ui.js';
 import {installGraphicUI} from './graphic/ui.js';
+import {installObservatoryUI} from './ui/observatory.js';
 
 // The actual HTML documents are already semantic DOM inside the drawable canvas.
 // Do not duplicate all five long documents into a hidden accessibility mirror.
 renderNavigation();
+installObservatoryUI();
 // Preserve original WebGL world and stage architecture; only the whiteboard
 // surfaces are made of one uninterrupted, interactive HTML document each.
 let renderer=startWebGL(state)||startCSS3D();

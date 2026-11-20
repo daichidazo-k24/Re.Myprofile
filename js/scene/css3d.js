@@ -9,8 +9,11 @@ import {GRAPHIC_STAGES} from '../graphic/board.js';
 import {openGraphicGallery} from '../graphic/ui.js';
 import {createNotebookFallback} from '../graphic/notebook.js';
 import {createSkyBackdrop} from './sky-backdrop.js';
-import {createSkyCamera,updateCSSSkyCamera} from './sky-camera.js';
+import {createSkyCamera,updateCSSSkyCamera,updateSkyCamera} from './sky-camera.js';
 import {skyDomeDirection} from './sky-dome.js';
+import {OBSERVATORY,updateObservatory} from './observatory.js';
+import {syncObservatoryUI,positionObservatoryHotspots} from '../ui/observatory.js';
+import {worldCameraPose,telescopeFov,cssTelescopeView} from '../ui/orbit-camera.js';
 
 const CSS_SCALE=.674;
 export function startCSS3D(){
@@ -75,6 +78,12 @@ export function startCSS3D(){
    else if(!state.focused)toggleFocus();
   });
  });
+ const observatory=document.createElement('div');observatory.className='css-observatory';
+ observatory.style.transform=`translate3d(${OBSERVATORY.x/STEP*800}px,0,${OBSERVATORY.z/STEP*800}px)`;
+ observatory.innerHTML=`<div class="ladder"></div><div class="landing"></div><svg class="telescope" viewBox="0 0 155 130" aria-hidden="true"><path d="M75 55 L40 125 M75 55 L105 125 M75 55 L75 125" stroke="#9fb8d9" stroke-width="9" fill="none"/><g transform="rotate(-22 75 40)"><path d="M15 30 H35 V50 H15Z" fill="#182548"/><path d="M35 20 H130 V60 H35Z" fill="#e6ad59" stroke="#ffd083" stroke-width="5"/><path d="M120 14 H140 V66 H120Z" fill="#263c64"/><path d="M135 20 H145 V60 H135Z" fill="#84e0ca"/></g></svg><img class="observatory-miner" src="assets/miner.png" alt=""><i class="ladder-anchor" style="position:absolute;top:150px"></i><i class="telescope-anchor" style="position:absolute;left:60px;top:-375px"></i>`;
+ world.appendChild(observatory);
+ const ladderAnchor=observatory.querySelector('.ladder-anchor'),telescopeAnchor=observatory.querySelector('.telescope-anchor');
+ const climber=observatory.querySelector('.observatory-miner');
  // The shared celestial sphere replaces screen-fixed decorative light dots.
  if(!backdrop){
   const stars=document.createElement('div');stars.className='css3d-star-panorama';
@@ -94,6 +103,11 @@ export function startCSS3D(){
  function cssFrame(now){
   if(!running)return;
   const dt=lastFrame?(now-lastFrame)/1000:0;lastFrame=now;
+  updateObservatory(dt);syncObservatoryUI();
+  climber.hidden=!state.atLadder||state.observatoryPhase==='viewing';
+  observatory.querySelector('.telescope').style.visibility=state.observatoryPhase==='viewing'?'hidden':'visible';
+  climber.style.top=`${90-state.observatoryHeight*(800/STEP)}px`;
+  climber.style.left=['top','viewing'].includes(state.observatoryPhase)?'-100px':'-57px';
   const baseScale=Math.max(.30,Math.min(1.05,innerWidth/(innerWidth<680?1110:1330)));
   state.cameraX+=(state.aim-state.cameraX)*(state.reduceMotion?1:.07);
   state.focusMix+=((state.focused?1:0)-state.focusMix)*(state.reduceMotion?1:.09);
@@ -101,15 +115,27 @@ export function startCSS3D(){
   // a DOM sibling of its board, hence inherits the identical stage rotation.
   const f=state.focusMix;
   const yawDeg=(-state.orbitYaw*180/Math.PI)*(1-f)+(-2)*f;
-  const pitchDeg=((state.orbitPitch*180/Math.PI)-9)*(1-f)+1.2*f;
+  const pitchDeg=(state.orbitPitch*180/Math.PI)*(1-f)+1.2*f;
   const zoom=(17.5-state.orbitDistance)*41*(1-f);
   const z=(state.entered?35:-360)*(1-f)+(state.entered?90:-140)*f+zoom;
-  const y=(state.entered?0:-12)*(1-f)+113*f -state.orbitPanY*48*(1-f);
+  const y=(state.entered?0:-12)*(1-f)+113*f -state.orbitPanY*48*(1-f)+state.observatoryHeight*(800/STEP)*baseScale;
   const panOffset=state.orbitPanX*59*(1-f);
   const stageX=state.cameraX/STEP*800;
-  world.style.transform=`translate3d(${panOffset}px,${y}px,${z}px) rotateY(${yawDeg}deg) rotateX(${pitchDeg}deg) scale(${baseScale}) translate3d(${-stageX}px,0,0)`;
-  updateCSSSkyCamera(skyCamera,{width:innerWidth,height:innerHeight,perspective:innerWidth<=800?880:1120,
-   scale:baseScale,yaw:yawDeg*Math.PI/180,pitch:pitchDeg*Math.PI/180,x:panOffset,y,z,stageX,units:800/STEP});
+  if(state.observatoryPhase==='viewing'){
+   const pose=worldCameraPose(state.cameraX),view=cssTelescopeView(pose.eye,pose.target,innerHeight,800/STEP);
+   viewport.style.perspective=`${view.perspective}px`;
+   world.style.transform=`matrix3d(${Array.from(view.matrix).join(',')})`;
+   updateSkyCamera(skyCamera,pose.eye,pose.target,telescopeFov(),innerWidth/innerHeight);
+  }else{
+   viewport.style.perspective='';
+   world.style.transform=`translate3d(${panOffset}px,${y}px,${z}px) rotateY(${yawDeg}deg) rotateX(${pitchDeg}deg) scale(${baseScale}) translate3d(${-stageX}px,0,0)`;
+   updateCSSSkyCamera(skyCamera,{width:innerWidth,height:innerHeight,perspective:innerWidth<=800?880:1120,
+    scale:baseScale,yaw:yawDeg*Math.PI/180,pitch:pitchDeg*Math.PI/180,x:panOffset,y,z,stageX,units:800/STEP});
+  }
+  positionObservatoryHotspots(point=>{
+   const anchor=point[1]<2?ladderAnchor:telescopeAnchor;
+   const rect=anchor.getBoundingClientRect();return {x:rect.x,y:rect.y};
+  });
   if(backdrop)backdrop.draw(state,dt,skyCamera);
   else{
    // A panoramic still remains navigable even when WebGL itself is unavailable.
@@ -118,7 +144,7 @@ export function startCSS3D(){
    skyDomeDirection(skyCamera.eye,skyRay,skyDirection);
    const longitude=Math.atan2(skyDirection[2],skyDirection[0])/(2*Math.PI)+.5;
    const latitude=Math.asin(Math.max(-1,Math.min(1,skyDirection[1])))/Math.PI+.5;
-   const perspective=innerWidth<=800?880:1120,skyWidth=2*Math.PI*perspective,skyHeight=Math.PI*perspective;
+   const perspective=state.observatoryPhase==='viewing'?innerHeight/(2*Math.tan(telescopeFov()/2)):(innerWidth<=800?880:1120),skyWidth=2*Math.PI*perspective,skyHeight=Math.PI*perspective;
    viewport.style.setProperty('--sky-width',`${skyWidth}px`);viewport.style.setProperty('--sky-height',`${skyHeight}px`);
    viewport.style.setProperty('--sky-x',`${innerWidth/2-longitude*skyWidth}px`);
    viewport.style.setProperty('--sky-y',`${Math.max(innerHeight-skyHeight,Math.min(0,innerHeight/2-(1-latitude)*skyHeight))}px`);

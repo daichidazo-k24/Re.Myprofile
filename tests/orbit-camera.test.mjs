@@ -1,9 +1,11 @@
-import test from 'node:test';
+import test,{beforeEach,afterEach} from 'node:test';
 import assert from 'node:assert/strict';
 import {state} from '../js/state.js';
 import {rotateWorld,zoomWorld,panWorld,resetWorldCamera,worldCameraPose,CAMERA_LIMITS} from '../js/ui/orbit-camera.js';
 import {readFileSync} from 'node:fs';
 const source=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
+beforeEach(()=>{state.cameraUnlocked=true;state.observatoryHeight=0});
+afterEach(()=>{state.cameraUnlocked=false;resetWorldCamera()});
 test('orbit changes the camera eye around a FIXED target, not the board positions',()=>{
  resetWorldCamera();
  const before=worldCameraPose(13.5);rotateWorld(.35,.22);

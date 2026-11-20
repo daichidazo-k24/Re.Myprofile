@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="css/fishing.css" />
 <link rel="stylesheet" href="css/gallery.css" />
 <link rel="stylesheet" href="css/camera.css" />
+<link rel="stylesheet" href="css/observatory.css" />
 </head>
 <body>
 <a class="skip-nav" href="#site-information">3Dアニメーションを飛ばして自己紹介を読む</a>
@@ -24,13 +25,13 @@
 <div class="camera-controls-root" id="cameraControlsRoot">
  <button class="camera-toggle" type="button" id="cameraToggle" aria-controls="cameraPad" aria-expanded="false">◇ CAMERA</button>
  <div class="camera-pad" id="cameraPad" aria-label="カメラ視点操作">
-  <div class="camera-head">WORLD CAMERA</div>
+  <div class="camera-head">TELESCOPE / FPS</div>
   <div class="camera-grid">
    <span></span><button type="button" data-cam="up" aria-label="カメラを上方向へ回転">↑</button><span></span>
    <button type="button" data-cam="left" aria-label="カメラを左へ回転">←</button><button type="button" data-cam="reset" aria-label="視点を初期状態に戻す">RESET</button><button type="button" data-cam="right" aria-label="カメラを右へ回転">→</button>
    <button type="button" data-cam="minus" aria-label="ズームアウト">−</button><button type="button" data-cam="down" aria-label="カメラを下方向へ回転">↓</button><button type="button" data-cam="plus" aria-label="ズームイン">＋</button>
   </div>
-  <p class="camera-hint">DRAG / SWIPE: ORBIT<br>TRACKPAD: ORBIT<br>CTRL + WHEEL: ZOOM<br>SHIFT + DRAG: PAN</p>
+  <p class="camera-hint">DRAG / SWIPE: LOOK<br>ARROW KEYS: LOOK<br>CTRL + WHEEL: ZOOM<br>ESC: EXIT TELESCOPE</p>
  </div>
 </div>
 <div class="vignette" aria-hidden="true"></div>
