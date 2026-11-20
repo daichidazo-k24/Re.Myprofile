@@ -12,14 +12,6 @@ export function onNavigate(listener){subscribers.add(listener);return()=>subscri
 export function renderNavigation(){
  const i=state.active,stage=STAGES[i],fishing=stage.id==='fishing';
  document.querySelectorAll('.chapter').forEach((btn,j)=>{btn.classList.toggle('is-active',i===j);btn.setAttribute('aria-current',i===j?'page':'false')});
- const sceneKicker=$('sceneKicker'),sceneTitle=$('sceneTitle'),sceneSubtitle=$('sceneSubtitle');
- if(sceneKicker)sceneKicker.textContent=stage.kicker;
- if(sceneTitle)sceneTitle.textContent=stage.title;
- if(sceneSubtitle)sceneSubtitle.textContent=stage.subtitle;
- $('actionCaption').textContent=stage.kicker;
- const firstLink=STAGE_LINKS[i][0]||{label:'GITHUB PROFILE',url:'https://github.com/daichidazo-k24'};
- $('sideAction').hidden=fishing;
- $('primaryLink').textContent=firstLink.label+' ↗';$('primaryLink').href=firstLink.url;
  const parent=$('pageExternalLinks');parent.replaceChildren();
  // These are shortcuts only; all source links also live at their proper text location.
  for(const link of STAGE_LINKS[i].slice(0,2)){

@@ -1,7 +1,6 @@
 /** One static triangle batch for the whole sky, plus one reusable meteor.
  * Shader-only glow/twinkle; no framebuffer, DOM or texture work. */
 import {createSkyStars,projectMiningTargets,STAR_MIN_PIXELS,STAR_MAX_PIXELS} from './sky-model.js';
-import {STEP} from '../data/stages.js';
 
 // Extend only the light footprint; the core and mining targets keep their original size.
 // View-depth attenuation shares the perspective sizing metric, so orbiting does not
@@ -76,10 +75,9 @@ const CORNERS=[[-1,-1],[1,-1],[1,1],[-1,-1],[1,1],[-1,1]];
 function appendQuad(out,from,to,type,size,phase,color){
  for(const corner of CORNERS)out.push(...from,...to,...corner,type,size,phase,...color);
 }
-
 export function createSkyRenderer(gl,bridge){
  const shaders=[],buffers=[],program=gl.createProgram();
- let loc,sky,meteor;
+ let loc,sky;
  const stars=createSkyStars();
  const attributes=[['aFrom',3,0],['aTo',3,12],['aCorner',2,24],['aStyle',3,32],['aColor',3,44]];
  const uniforms=['uVP','uViewport','uPixelRatio','uTime','uMotion','uOpacity','uOffsetX'];
@@ -107,9 +105,6 @@ export function createSkyRenderer(gl,bridge){
   const data=[];
   stars.forEach(p=>appendQuad(data,p.position,p.position,0,p.size,p.phase,p.color));
   sky=batch(data);
-  const streak=[];
-  appendQuad(streak,[-7,12,-16],[7,8.8,-19],1,1.8,0,[.78,.88,1]);
-  meteor=batch(streak);
   bridge.available=true;
  }catch(error){destroy();throw error}
 
@@ -119,7 +114,6 @@ export function createSkyRenderer(gl,bridge){
   for(const [name,size,offset] of attributes){gl.enableVertexAttribArray(loc[name]);gl.vertexAttribPointer(loc[name],size,gl.FLOAT,false,56,offset)}
   gl.drawArrays(gl.TRIANGLES,0,batch_.count);
  }
- let meteorCycle=-1,meteorX=0;
  return {destroy,draw(vp,state,t,dt,width,height,cssHeight){
   const reduced=state.reduceMotion,pixelRatio=height/cssHeight;
   if(bridge.active)projectMiningTargets(bridge,stars,vp,width,height,pixelRatio);
@@ -130,15 +124,6 @@ export function createSkyRenderer(gl,bridge){
   gl.uniform1f(loc.uMotion,reduced||!state.entered?0:1);gl.uniform1f(loc.uOpacity,1);
   gl.uniform1f(loc.uOffsetX,0);
   draw(sky);
-  // One reusable distant streak, for 1.25 s every 14 s. Never animates in reduced motion.
-  const cycle=Math.floor(t/14),phase=t%14-9;
-  if(cycle!==meteorCycle){meteorCycle=cycle;meteorX=state.active*STEP}
-  if(state.entered&&!reduced&&phase>=0&&phase<1.25){
-   const p=phase/1.25;
-   gl.uniform1f(loc.uOffsetX,meteorX+p*12);
-   gl.uniform1f(loc.uOpacity,Math.sin(p*Math.PI));
-   draw(meteor);
-  }
   // Attribute arrays also need restoring: a later terrain batch can be much larger.
   for(const [name] of attributes)gl.disableVertexAttribArray(loc[name]);
   gl.depthMask(true);
