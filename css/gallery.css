@@ -43,7 +43,7 @@
 .gallery-empty{grid-column:1/-1;place-self:center;margin:15vh 20px;text-align:center;color:#354a78;line-height:1.8}
 .graphic-gallery-shortcut{background:#192b48;color:#e7edff;border:2px solid #a7b9e1;padding:9px 12px;font:700 12px Arial,sans-serif}
 .graphic-gallery-shortcut[hidden]{display:none}
-.css-graphic-board{position:absolute;left:540px;top:-280px;width:440px;height:248px;transform:translateZ(-510px);padding:0;border:0;background:transparent;cursor:pointer}
+.css-graphic-board{position:absolute;left:552px;top:235px;width:268px;height:161px;transform:translateZ(198px) rotateX(-17deg);padding:0;border:0;background:transparent;cursor:pointer}
 .css-graphic-board canvas{display:block;width:100%;height:100%;image-rendering:pixelated;pointer-events:none}
 .css-graphic-board:hover,.css-graphic-board:focus-visible{filter:brightness(1.08)}
 .css-graphic-board{pointer-events:auto}

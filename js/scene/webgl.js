@@ -28,8 +28,8 @@ export function startWebGL(state,onPageChange){
  let program,cubeMesh,planeMesh,terrainMesh,loc={},whiteTex,minerTex,titleTextures=[],htmlBoards=null;
  let lastTs=0,introZoom=30,running=true,sky=null,background=null,planetarium=null,graphicTex=null,graphicMesh=null;
  const skyCamera=createSkyCamera();
- const graphicModel=M.move(GRAPHIC_BOARD.x,GRAPHIC_BOARD.y,GRAPHIC_BOARD.z);
- const graphicLabelModel=M.model(GRAPHIC_BOARD.x,GRAPHIC_BOARD.y+NOTEBOOK_LABEL.y,GRAPHIC_BOARD.z+NOTEBOOK_LABEL.z,NOTEBOOK_LABEL.worldWidth,NOTEBOOK_LABEL.worldHeight,1);
+ const graphicModel=M.model(GRAPHIC_BOARD.x,GRAPHIC_BOARD.y,GRAPHIC_BOARD.z,GRAPHIC_BOARD.scale,GRAPHIC_BOARD.scale,GRAPHIC_BOARD.scale,0,GRAPHIC_BOARD.tilt);
+ const graphicLabelModel=M.mul(graphicModel,M.model(0,NOTEBOOK_LABEL.y,NOTEBOOK_LABEL.z,NOTEBOOK_LABEL.worldWidth,NOTEBOOK_LABEL.worldHeight,1));
  const time0=performance.now();
  const vertexShader=`attribute vec3 aPos;attribute vec3 aNorm;attribute vec2 aUv;attribute vec3 aCol;uniform mat4 uModel;uniform mat4 uVP;varying vec2 vUv;varying vec3 vCol;varying float vBright;varying vec3 vPos;void main(){vec4 p=uModel*vec4(aPos,1.);vPos=p.xyz;vUv=aUv;vCol=aCol;vec3 n=normalize(mat3(uModel)*aNorm);vBright=.7+.3*max(0.,dot(n,normalize(vec3(-.25,.82,.6))));gl_Position=uVP*p;}`;
  const fragmentShader=`precision mediump float;varying vec2 vUv;varying vec3 vCol;varying float vBright;varying vec3 vPos;uniform vec4 uColor;uniform sampler2D uTex;uniform float uUseTex;uniform float uUnlit;uniform float uFog;uniform vec3 uEye;void main(){vec4 s=mix(vec4(1.),texture2D(uTex,vUv),uUseTex);if(s.a<.02)discard;vec3 rgb=s.rgb*vCol*uColor.rgb*mix(vBright,1.,uUnlit);float d=length(vPos-uEye);float f=smoothstep(15.,65.,d)*uFog;rgb=mix(rgb,vec3(.025,.065,.14),f);gl_FragColor=vec4(rgb,s.a*uColor.a);}`;
