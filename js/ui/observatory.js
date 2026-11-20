@@ -16,7 +16,7 @@ export function installObservatoryUI(){
  zoomSlider.addEventListener('input',()=>setTelescopeMagnification(Number(zoomSlider.value)));
  document.body.appendChild(zoomControl);
  ladderButton=document.createElement('button');ladderButton.type='button';ladderButton.className='observatory-hotspot ladder-hotspot';ladderButton.hidden=true;
- ladderButton.textContent='梯子へ';ladderButton.addEventListener('click',approachLadder);
+ ladderButton.setAttribute('aria-label','梯子の位置へ移動');ladderButton.addEventListener('click',approachLadder);
  telescopeButton=document.createElement('button');telescopeButton.type='button';telescopeButton.className='observatory-hotspot telescope-hotspot';telescopeButton.hidden=true;
  telescopeButton.setAttribute('aria-label','望遠鏡をのぞいて見回す');telescopeButton.innerHTML='<span>望遠鏡をのぞく</span>';
  telescopeButton.addEventListener('click',useTelescope);

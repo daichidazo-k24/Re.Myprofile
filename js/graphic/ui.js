@@ -16,10 +16,7 @@ export function openGraphicGallery(){
 export function installGraphicUI(){
  gallery=createGallery({id:'graphic',title:GRAPHIC_CONTENT.title,label:GRAPHIC_CONTENT.miniLabel,
   intro:GRAPHIC_CONTENT.intro,entries:GRAPHIC_IMAGES,groups:GRAPHIC_GROUPS,itemLabel:'WORKS'});
- const shortcut=document.createElement('button');shortcut.type='button';shortcut.className='graphic-gallery-shortcut';
- shortcut.textContent='Graphic Gallery';shortcut.setAttribute('aria-label','ポスター・ヘッダー作品のGraphic Galleryを開く');
- shortcut.addEventListener('click',openGraphicGallery);document.querySelector('.right-ctl').prepend(shortcut);
- const sync=()=>{const nearby=GRAPHIC_STAGES.includes(state.active);shortcut.hidden=!nearby||state.focused;if(!nearby){projected=false;gallery.close()}};
+ const sync=()=>{if(!GRAPHIC_STAGES.includes(state.active)){projected=false;gallery.close()}};
  onNavigate(sync);sync();
  // Bubble phase respects the existing capture-phase suppression of drag-generated clicks.
  document.getElementById('worldCanvas').addEventListener('click',event=>{

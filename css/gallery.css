@@ -41,8 +41,6 @@
 .graphic-gallery .gallery-photo-number{letter-spacing:0;line-height:1.6}
 .graphic-gallery .gallery-photo.is-missing-photo::before{content:'作品画像を準備中です'}
 .gallery-empty{grid-column:1/-1;place-self:center;margin:15vh 20px;text-align:center;color:#354a78;line-height:1.8}
-.graphic-gallery-shortcut{background:#192b48;color:#e7edff;border:2px solid #a7b9e1;padding:9px 12px;font:700 12px Arial,sans-serif}
-.graphic-gallery-shortcut[hidden]{display:none}
 .css-graphic-board{position:absolute;left:552px;top:235px;width:268px;height:161px;transform:translateZ(198px) rotateX(-17deg);padding:0;border:0;background:transparent;cursor:pointer}
 .css-graphic-board canvas{display:block;width:100%;height:100%;image-rendering:pixelated;pointer-events:none}
 .css-graphic-board:hover,.css-graphic-board:focus-visible{filter:brightness(1.08)}
@@ -57,7 +55,6 @@
  .media-gallery-dialog .gallery-photogrid{grid-template-columns:minmax(0,1fr);padding:12px}
  .media-gallery-dialog .gallery-masthead h2{font-size:23px}
  .media-gallery-dialog .gallery-mini-label{letter-spacing:1px}
- .graphic-gallery-shortcut{font-size:10px;padding:8px}
 }
 /* Aim for photos at least 300px wide, with no more than five equal columns.
  * Four 12px gaps are reserved at the five-column width.

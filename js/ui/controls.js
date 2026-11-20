@@ -1,9 +1,6 @@
 import {state} from '../state.js';
-import {STAGES} from '../data/stages.js';
 import {selectStage,toggleFocus,setFocus} from './navigation.js';
-import {toggleSound} from './audio.js';
 import {scrollBoard,scrollToStart,scrollToEnd} from './board-scroll.js';
-import {castFishingLine} from '../fishing/ui.js';
 import {isGalleryOverlayActive} from './gallery.js';
 import {rotateWorld,zoomWorld,panWorld,resetWorldCamera,telescopeLookSensitivity} from './orbit-camera.js';
 import {approachLadder,climbLadder,descendLadder,stopViewing} from '../scene/observatory.js';
@@ -15,13 +12,8 @@ export function bindControls(intro){
  document.querySelectorAll('.chapter').forEach(btn=>btn.addEventListener('click',()=>{
   if(!state.entered)intro.finish();selectStage(+btn.dataset.section);
  }));
- document.getElementById('focusBtn').addEventListener('click',()=>{
-  if(!state.entered)intro.finish();
-  if(STAGES[state.active].id==='fishing')castFishingLine();else toggleFocus();
- });
  document.getElementById('replayBtn').addEventListener('click',()=>intro.replay());
  document.getElementById('skipIntro').addEventListener('click',()=>intro.finish());
- document.getElementById('soundBtn').addEventListener('click',toggleSound);
 
  // Optional compact button panel for touchscreens and keyboard-only users.
  const cameraToggle=document.getElementById('cameraToggle');

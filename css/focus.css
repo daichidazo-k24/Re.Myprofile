@@ -1,12 +1,10 @@
 /* Focus / stage-view mode */
 .top-hud,.vertical-story,.side-action,.screen-grain,.vignette,.bottom-hud,.chapter-dock{transition:opacity .35s ease, transform .35s ease, filter .35s ease}
-.focus-btn{background:#24355b;border-color:#f2bf63;color:#ffda81}
-.focus-btn[aria-pressed="true"]{background:linear-gradient(180deg,#f7b24b,#ef8f17);color:#18233c;border-color:#ffd48d;box-shadow:inset 2px 2px #ffe6b0,inset -2px -2px #a15407}
 body.is-focus-mode .side-action,body.is-focus-mode .vertical-story{opacity:0;transform:translateY(12px);pointer-events:none}
 body.is-focus-mode .top-hud{opacity:.2;filter:saturate(.7)}
 body.is-focus-mode .bottom-hud{opacity:.92}
 body.is-focus-mode .controller-hint{opacity:.35}
-body.is-focus-mode .chapter-dock{opacity:0;visibility:hidden;pointer-events:none;transform:translateX(-50%) translateY(18px)}
+body.is-focus-mode .chapter-dock{opacity:0;visibility:hidden;pointer-events:none;transform:translateX(-50%) scale(.67) translateY(18px)}
 body.is-focus-mode .screen-grain{opacity:.12}
 body.is-focus-mode .vignette{background:radial-gradient(ellipse at 50% 40%,transparent 22%,rgba(1,4,14,.66) 100%)}
 body.is-focus-mode .notification{opacity:0!important}
@@ -33,7 +31,7 @@ body.is-focus-mode .side-action{pointer-events:none}
 
 /* The stage menu belongs to WORLD VIEW only. Focused boards stay fully unobstructed. */
 .chapter-dock{transition:opacity .26s ease, transform .26s ease, visibility .26s ease}
-body.is-focus-mode .chapter-dock{opacity:0;visibility:hidden;pointer-events:none;transform:translateX(-50%) translateY(18px)}
+body.is-focus-mode .chapter-dock{opacity:0;visibility:hidden;pointer-events:none;transform:translateX(-50%) scale(.67) translateY(18px)}
 @media (prefers-reduced-motion: reduce){.chapter-dock{transition:none}}
 
 /* Bottom-left hint removed; keep navigation controls on the right. */

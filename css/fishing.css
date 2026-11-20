@@ -42,7 +42,6 @@ body.fishing-reeling .fishing-css-stage .fish-bob{animation:fish-pull 1.3s ease-
 @keyframes fish-pull{to{transform:translateZ(106px) translateY(-210px)}}
 @keyframes fish-line-pull{to{height:80px}}
 .fishing-css-stage{pointer-events:none}
-body.on-fishing-stage #focusBtn{border-color:#ffcf75;color:#ffda85}
 body.on-fishing-stage .chapter:last-child{border-color:#f2ad3f;color:#ffcf8c}
 @media(max-width:800px){.fishing-cast-hotspot{min-width:138px;padding:9px 8px;font-size:10px}.fishing-cast-hotspot small{font-size:7px}.gallery-masthead{padding:12px 10px 10px}.gallery-icon{font-size:25px}.gallery-masthead p{font-size:10px}.gallery-mini-label{font-size:9px}.gallery-photogrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:9px}.gallery-footer{flex-wrap:wrap}.gallery-footer span{display:none}.fishing-gallery-dialog{max-height:86vh}}
 @media(max-width:460px){.gallery-photogrid{grid-template-columns:repeat(3,minmax(0,1fr))}.gallery-masthead h2{font-size:23px}.gallery-masthead{margin:0 8px}.gallery-footer a,.gallery-footer button{font-size:9px;padding:8px}.fishing-gallery-shell{max-height:calc(86vh - 10px)}.fishing-gallery-dialog{width:calc(100% - 16px);max-height:86vh}.fishing-cast-hotspot{min-width:110px}.chapter{min-width:0!important;padding:9px 4px!important;font-size:8px!important;letter-spacing:.3px!important}.chapter-index{font-size:8px!important}}

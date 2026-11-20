@@ -29,7 +29,7 @@ body.is-observing .chapter-dock,body.is-telescope-view .top-hud,body.is-telescop
 body.is-telescope-view .css3d-frame{pointer-events:none}
 body.is-at-ladder .css3d-stage .css-miner{display:none}
 .css3d-stage[data-stage='quests'] .block-stack{display:none}
-body.is-observing #focusBtn,body.is-observing .side-action{visibility:hidden;pointer-events:none}
+body.is-observing .side-action{visibility:hidden;pointer-events:none}
 .css-observatory{position:absolute;transform-style:preserve-3d;pointer-events:none}
 .css-observatory .ladder{position:absolute;left:-34px;top:-280px;width:68px;height:475px;border-left:9px solid #e6ad59;border-right:9px solid #e6ad59;background:repeating-linear-gradient(to top,transparent 0 21px,#ffd083 21px 28px);filter:drop-shadow(5px 4px #273654)}
 .css-observatory .landing{position:absolute;left:-112px;top:-290px;width:224px;height:24px;background:#9fb8d9;border-bottom:15px solid #34486f;transform:translateZ(-30px)}
