@@ -38,7 +38,7 @@ export function updateObservatory(dt){
 }
 
 /** Physical ladder, elevated landing and a brass telescope, in world coordinates. */
-export function drawObservatory({box,quad},minerTex){
+export function drawObservatory({box,quad},minerTex,climbTextures=[],time=0){
  const {x,z,height:h}=OBSERVATORY;
  for(const side of [-1,1]){
   box(x+side*.61,h/2,z,.15,h,.18,'#e6ad59');
@@ -62,8 +62,11 @@ export function drawObservatory({box,quad},minerTex){
  box(tx+.78,h+2.03,tz,.22,.62,.65,'#263c64',0,0,.35);
  box(tx+.9,h+2.07,tz,.08,.48,.51,'#84e0ca',0,0,.35);
  box(tx-.87,h+1.44,tz,.35,.22,.25,'#182548',0,0,.35);
- if(state.atLadder&&minerTex){
+ if(state.atLadder){
   const atTop=['top','viewing'].includes(state.observatoryPhase);
-  quad(x-(atTop?.8:0),state.observatoryHeight+1.05,z+.35,1.9,1.65,'#ffffff',minerTex);
+  const frame=Math.floor(time*7)%2;
+  const animating=['climbing','descending'].includes(state.observatoryPhase);
+  const texture=animating?(climbTextures[frame]||minerTex):minerTex;
+  if(texture)quad(x-(atTop?.8:0),state.observatoryHeight+1.05,z+.35,1.9,1.65,'#ffffff',texture);
  }
 }

@@ -25,7 +25,7 @@ export function startWebGL(state,onPageChange){
  // No overlay / double-render workaround: only the native HTML-in-Canvas route
  // can run the WebGL stage. Unsupported browsers use the CSS3D fallback.
  if(!gl||!isNativeHTMLCanvasAvailable(glCanvas,gl))return null;
- let program,cubeMesh,planeMesh,terrainMesh,loc={},whiteTex,minerTex,titleTextures=[],htmlBoards=null;
+ let program,cubeMesh,planeMesh,terrainMesh,loc={},whiteTex,minerTex,climbTextures=[null,null],titleTextures=[],htmlBoards=null;
  let lastTs=0,introZoom=30,running=true,sky=null,background=null,planetarium=null,graphicTex=null,graphicMesh=null;
  const skyCamera=createSkyCamera();
  const graphicModel=M.model(GRAPHIC_BOARD.x,GRAPHIC_BOARD.y,GRAPHIC_BOARD.z,GRAPHIC_BOARD.scale,GRAPHIC_BOARD.scale,GRAPHIC_BOARD.scale,0,GRAPHIC_BOARD.tilt);
@@ -52,6 +52,15 @@ export function startWebGL(state,onPageChange){
   graphicMesh=mesh(createNotebookMesh());
   const miner=new Image();miner.onload=()=>{try{minerTex=texFromCanvas(miner)}catch(error){console.warn('Miner texture:',error)}};
   miner.src=new URL('../../assets/miner.png',import.meta.url).href;
+  ['sub1.png','sub2.png'].forEach((name,index)=>{
+   const image=new Image();
+   image.onload=()=>{try{
+    const texture=texFromCanvas(image);gl.bindTexture(gl.TEXTURE_2D,texture);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+    climbTextures[index]=texture;
+   }catch(error){console.warn('Climbing sprite:',error)}};
+   image.src=new URL('../../assets/'+name,import.meta.url).href;
+  });
   titleTextures=STAGES.filter(s=>s.id!=='fishing').map(stage=>{
    const canvas=document.createElement('canvas');canvas.width=720;canvas.height=86;
    const ctx=canvas.getContext('2d');
@@ -141,7 +150,7 @@ function drawStageProps(i,t){const x=i*STEP,fx=x+5.5;
    return;
   }
   draw(terrainMesh,M.id(),'#ffffff');
-  drawObservatory({box,quad},minerTex);
+  drawObservatory({box,quad},minerTex,climbTextures,t);
   positionObservatoryHotspots(pos=>{
    const w=vWorld[3]*pos[0]+vWorld[7]*pos[1]+vWorld[11]*pos[2]+vWorld[15];
    if(w<=.05)return null;

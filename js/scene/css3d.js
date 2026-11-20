@@ -105,6 +105,10 @@ export function startCSS3D(){
   if(!running)return;
   const dt=lastFrame?(now-lastFrame)/1000:0;lastFrame=now;
   updateObservatory(dt);syncObservatoryUI();
+  const climbSprite=['climbing','descending'].includes(state.observatoryPhase)?'sub'+(Math.floor(now/150)%2+1)+'.png':'miner.png';
+  if(climber.dataset.pose!==climbSprite){
+   climber.src=new URL('../../assets/'+climbSprite,import.meta.url).href;climber.dataset.pose=climbSprite;
+  }
   climber.hidden=!state.atLadder||state.observatoryPhase==='viewing';
   observatory.querySelector('.telescope').style.visibility=state.observatoryPhase==='viewing'?'hidden':'visible';
   climber.style.top=`${90-state.observatoryHeight*(800/STEP)}px`;
