@@ -24,6 +24,22 @@
 /* Wide rectangular view: thin edges, clear corners, and a separate right zoom rail. */
 body.is-telescope-view::after{content:'';position:fixed;z-index:12;inset:12px 64px 12px 12px;border:1px solid #485365;border-radius:0;pointer-events:none;background:transparent;box-shadow:0 0 0 150vmax #020408}
 body.is-telescope-view .vignette{opacity:0}
+.telescope-ufo{
+ position:fixed;z-index:11;width:var(--ufo-size);height:var(--ufo-size);
+ transform:translate(-50%,-50%);padding:0;border:0;background:transparent;
+}
+.telescope-ufo img{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;pointer-events:none}
+.telescope-ufo img:nth-child(2),.telescope-ufo.shows-alt img:first-child{opacity:0}
+.telescope-ufo.shows-alt img:nth-child(2){opacity:1}
+.telescope-ufo span{
+ position:absolute;left:67%;top:17%;padding:.7em .75em 1em;background:#f4f2ec;color:#0f0e14;
+ font:900 calc(var(--ufo-size) * .082)/1 "Courier New",monospace;white-space:nowrap;
+ clip-path:polygon(0 20%,6% 20%,6% 7%,13% 7%,13% 0,92% 0,92% 12%,100% 12%,100% 72%,94% 72%,94% 84%,19% 84%,19% 94%,13% 94%,13% 100%,7% 100%,7% 84%,0 84%);
+ transform-origin:14% 88%;animation:telescope-ufo-pop .28s steps(5,end) both;
+}
+@keyframes telescope-ufo-pop{from{transform:scale(.35);opacity:0}to{transform:scale(1);opacity:1}}
+.telescope-ufo:not(.shows-greeting) .ufo-greeting,.telescope-ufo.shows-greeting span:not(.ufo-greeting){display:none}
+@media(prefers-reduced-motion:reduce){.telescope-ufo span{animation:none}}
 body.is-observing .observatory-panel{bottom:max(18px,env(safe-area-inset-bottom))}
 body.is-observing .chapter-dock,body.is-telescope-view .top-hud,body.is-telescope-view .bottom-hud,body.is-telescope-view .camera-controls-root,body.is-telescope-view .side-action,body.is-telescope-view .notification{opacity:0;visibility:hidden;pointer-events:none}
 body.is-telescope-view .css3d-frame{pointer-events:none}

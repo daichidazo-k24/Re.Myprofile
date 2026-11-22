@@ -289,7 +289,7 @@ function drawStageProps(i,t,walk){const box=sceneryBox,x=i*STEP,fx=x+5.5,stage=S
    if(w<=.05)return null;
    return {x:((vWorld[0]*pos[0]+vWorld[4]*pos[1]+vWorld[8]*pos[2]+vWorld[12])/w+1)*innerWidth/2,
     y:(1-(vWorld[1]*pos[0]+vWorld[5]*pos[1]+vWorld[9]*pos[2]+vWorld[13])/w)*innerHeight/2};
-  });
+  },t);
   for(let i=0;i<STAGES.length;i++){if(Math.abs(i*STEP-cameraX)>28)continue;if(STAGES[i].id==='fishing'){drawFishingWorld({box},t)}else{board(i,t);drawStageProps(i,t,walk)}}
   if(walk)draw(planeMesh,minerWalkModel(walk),'#ffffff',minerSprites[walk.sprite],1,0);
   const atFishing=state.entered&&STAGES[state.active].id==='fishing';

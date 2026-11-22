@@ -1,9 +1,12 @@
 import {state} from '../state.js';
 import {OBSERVATORY,approachLadder,climbLadder,descendLadder,useTelescope,stopViewing} from '../scene/observatory.js';
 import {STAIR_ARRIVAL_DISTANCE,STAIR_HOTSPOT,TELESCOPE_POSITION} from '../scene/observatory-layout.js';
-import {setTelescopeMagnification,telescopeMagnification} from './orbit-camera.js';
+import {setTelescopeMagnification,telescopeFov,telescopeMagnification} from './orbit-camera.js';
+import {UFO_DIRECTION,projectTelescopeUfo} from '../scene/telescope-ufo.js';
+import {TELESCOPE_OPTICS} from '../scene/camera-settings.js';
 
-let panel,ladderButton,telescopeButton,zoomControl,zoomSlider,lastStatus='',lastUIKey='';
+let panel,ladderButton,telescopeButton,zoomControl,zoomSlider,ufoButton,lastStatus='',lastUIKey='';
+let ufoSeenAt=null;
 export function installObservatoryUI(){
  panel=document.createElement('div');panel.className='observatory-panel';panel.hidden=true;
  panel.innerHTML='<p role="status" aria-live="polite"></p><button type="button" data-observe="climb" aria-label="上矢印キーで梯子を上る">↑ 上る</button><button type="button" data-observe="stop" aria-label="望遠鏡を閉じる。Escキーでも戻れます">戻る <kbd>Esc</kbd></button><button type="button" data-observe="descend" aria-label="下矢印キーで梯子を下りる">↓ 下りる</button>';
@@ -22,7 +25,23 @@ export function installObservatoryUI(){
  telescopeButton=document.createElement('button');telescopeButton.type='button';telescopeButton.className='observatory-hotspot telescope-hotspot';telescopeButton.hidden=true;
  telescopeButton.setAttribute('aria-label','望遠鏡をのぞいて見回す');telescopeButton.innerHTML='<span>望遠鏡をのぞく</span>';
  telescopeButton.addEventListener('click',useTelescope);
- document.body.append(ladderButton,telescopeButton);
+ ufoButton=document.createElement('button');
+ ufoButton.type='button';ufoButton.className='telescope-ufo';ufoButton.hidden=true;
+ ufoButton.setAttribute('aria-label','UFOを望遠鏡で拡大する');
+ for(const name of ['ufo1','ufo2']){
+  const sprite=document.createElement('img');
+  sprite.src=new URL('../../assets/'+name+'.png',import.meta.url).href;
+  sprite.alt='';sprite.draggable=false;ufoButton.appendChild(sprite);
+ }
+ const prompt=document.createElement('span');prompt.textContent='Click me !!!';
+ const greeting=document.createElement('span');greeting.className='ufo-greeting';greeting.textContent='hi , human';
+ ufoButton.append(prompt,greeting);
+ ufoButton.addEventListener('click',()=>{
+  if(state.observatoryPhase!=='viewing')return;
+  state.orbitYaw=UFO_DIRECTION.yaw;state.orbitPitch=UFO_DIRECTION.pitch;
+  setTelescopeMagnification(TELESCOPE_OPTICS.maxMagnification);
+ });
+ document.body.append(ladderButton,telescopeButton,ufoButton);
 }
 export function syncObservatoryUI(){
  if(!panel)return;
@@ -50,8 +69,17 @@ export function syncObservatoryUI(){
  toggle.title=state.cameraUnlocked?'カメラを操作':'ツリーハウス屋上の望遠鏡から見回せます';
  if(!state.cameraUnlocked){document.getElementById('cameraPad').classList.remove('is-open');toggle.setAttribute('aria-expanded','false')}
 }
-export function positionObservatoryHotspots(project){
+export function positionObservatoryHotspots(project,time){
  if(!ladderButton)return;
+ const ufo=state.observatoryPhase==='viewing'&&projectTelescopeUfo(state.orbitYaw,state.orbitPitch,telescopeFov(),innerWidth,innerHeight);
+ ufoButton.hidden=!ufo;
+ if(ufo){
+  ufoSeenAt??=time;
+  ufoButton.style.left=`${ufo.x}px`;ufoButton.style.top=`${ufo.y}px`;
+  ufoButton.style.setProperty('--ufo-size',`${ufo.size}px`);
+  ufoButton.classList.toggle('shows-alt',!state.reduceMotion&&Math.floor(time*2.5)%2===1);
+  ufoButton.classList.toggle('shows-greeting',Math.floor((time-ufoSeenAt)/2.6)%2===1);
+ }else ufoSeenAt=null;
  const visible=state.entered&&!state.focused&&[OBSERVATORY.leftStage,OBSERVATORY.rightStage].includes(state.active);
  for(const [button,point,enabled] of [
   [ladderButton,STAIR_HOTSPOT,visible&&!state.atLadder],

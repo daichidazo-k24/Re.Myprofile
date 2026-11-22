@@ -1,5 +1,6 @@
 import {state} from '../state.js';
 import {resetWorldCamera} from '../ui/orbit-camera.js';
+import {TELESCOPE_HOME} from './camera-settings.js';
 import {OBSERVATORY,STAIR_ARRIVAL_DISTANCE,buildRooftopTelescope,observatoryClimberPose} from './observatory-layout.js';
 export {OBSERVATORY} from './observatory-layout.js';
 
@@ -17,7 +18,7 @@ export function descendLadder(){
 }
 export function useTelescope(){
  if(state.observatoryPhase!=='top')return false;
- resetWorldCamera();state.orbitYaw=-1.5;state.orbitPitch=-.09;
+ resetWorldCamera();state.orbitYaw=TELESCOPE_HOME.yaw;state.orbitPitch=TELESCOPE_HOME.pitch;
  state.cameraUnlocked=true;state.observatoryPhase='viewing';return true;
 }
 export function stopViewing(){

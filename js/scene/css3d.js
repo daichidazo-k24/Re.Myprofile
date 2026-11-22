@@ -406,7 +406,7 @@ export function startCSS3D(){
   positionObservatoryHotspots(point=>{
    const anchor=point===STAIR_HOTSPOT?stairAnchor:telescopeAnchor;
    const rect=anchor.getBoundingClientRect();return {x:rect.x,y:rect.y};
-  });
+  },time);
   if(backdrop)backdrop.draw(state,dt,skyCamera);
   else{
    // A panoramic still remains navigable even when WebGL itself is unavailable.
