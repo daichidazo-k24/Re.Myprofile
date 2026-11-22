@@ -7,6 +7,11 @@
 .css3d-stage:not(.is-miner-active) .css-miner{display:none}
 @media(max-width:800px){.css3d-stage .css-miner{left:540px;top:-72px;width:165px;transform:translateZ(195px)}.css3d-stage .sprite-podium{left:555px;top:183px;width:120px}}
 
+.is-miner-walking .css3d-stage[data-stage] .css-miner{display:none}
+.css3d-walking-stage{--walk-descent:225px;--walk-pier-offset:90px}
+.css3d-walking-stage .css-miner{animation:none;transform:translateZ(195px) scaleX(var(--walk-facing,1))}
+@media(max-width:800px){.css3d-walking-stage{--walk-descent:352px;--walk-pier-offset:-360px}}
+
 .css3d-frame{pointer-events:auto;cursor:pointer}
 .css3d-frame::after{
  content:"";position:absolute;inset:-4px;transform:translateZ(-4px);pointer-events:none;

@@ -20,6 +20,7 @@ import {TREEHOUSE_TOP,buildIslandLandscape,islandTreePlanes} from './island-land
 import {createIslandTreeAtlas} from './island-trees.js';
 import {FRUIT_GLOW,collectFruitShadows,createFruitGlow,fruitLights,islandFaceLight,rasterIslandFace} from './island-lighting.js';
 import {createFrostSprite,frostFlakes,frostPose,showIslandFrost} from './island-frost.js';
+import {loadMinerWalkFrames,minerWalkPose} from './miner-pose.js';
 import {hex} from './math.js';
 
 const CSS_SCALE=.674;
@@ -276,6 +277,20 @@ export function startCSS3D(){
  });}
  onNavigate(applyPositions);applyPositions();
  let running=true,lastFrame=0;
+ const walker=document.createElement('div');
+ walker.className='css3d-stage css3d-walking-stage is-miner-active';
+ walker.hidden=true;
+ walker.setAttribute('aria-hidden','true');
+ world.appendChild(walker);
+ const walkFrames=[];
+ let walkFrame=-1;
+ loadMinerWalkFrames((canvas,index)=>{
+  if(!running)return;
+  canvas.className='css-miner';
+  canvas.hidden=true;
+  walkFrames[index]=canvas;
+  walker.appendChild(canvas);
+ });
  function cssFrame(now){
   if(!running)return;
   const dt=lastFrame?(now-lastFrame)/1000:0;lastFrame=now;
@@ -290,6 +305,21 @@ export function startCSS3D(){
   climber.style.transform=islandTransform(actor.x,actor.y,actor.z)+' translate(-50%,-100%)';
   const baseScale=Math.max(.30,Math.min(1.05,innerWidth/(innerWidth<680?1110:1330)));
   state.cameraX+=(state.aim-state.cameraX)*(state.reduceMotion?1:.07);
+  const walk=walkFrames[0]&&walkFrames[1]&&minerWalkPose(state,now/1000);
+  walker.hidden=!walk;
+  world.classList.toggle('is-miner-walking',Boolean(walk));
+  if(walk){
+   if(walkFrame!==walk.frame){
+    if(walkFrame>=0)walkFrames[walkFrame].hidden=true;
+    walkFrames[walk.frame].hidden=false;
+    walkFrame=walk.frame;
+   }
+   const descent=1-walk.lift;
+   const x=`calc(${state.cameraX*CSS_WORLD_UNITS}px + var(--walk-pier-offset) * ${walk.pierProgress})`;
+   const y=`calc(var(--walk-descent) * ${descent})`;
+   walker.style.transform=`translate3d(${x},${y},${-15+52*descent}px)`;
+   walker.style.setProperty('--walk-facing',walk.direction);
+  }
   state.focusMix+=((state.focused?1:0)-state.focusMix)*(state.reduceMotion?1:.09);
   updateFrost(state.cameraX,dt);
   // Orbit the *entire world* around the currently selected stage. The label is

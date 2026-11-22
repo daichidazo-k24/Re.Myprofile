@@ -18,7 +18,7 @@ export function renderNavigation(){
   const a=document.createElement('a');a.href=link.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=link.label+' ↗';parent.appendChild(a);
  }
  document.body.classList.toggle('is-focus-mode',state.focused);
- document.querySelectorAll('.css3d-stage').forEach((el,j)=>{el.classList.toggle('is-miner-active',j===i);el.classList.toggle('is-focus-target',state.focused&&j===i)});
+ document.querySelectorAll('.css3d-stage[data-stage]').forEach((el,j)=>{el.classList.toggle('is-miner-active',j===i);el.classList.toggle('is-focus-target',state.focused&&j===i)});
 }
 export function selectStage(index){
  leaveObservatory();
