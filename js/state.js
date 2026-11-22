@@ -8,7 +8,7 @@ export const state = {
  entered:false,focused:false,focusMix:0,
  mouseX:0,mouseY:0,dragX:0,dragY:0,
  orbitYaw:0,orbitPitch:WORLD_CAMERA.pitch,orbitDistance:WORLD_CAMERA.distance,orbitPanX:0,orbitPanY:0,
- telescopeFovDegrees:TELESCOPE_OPTICS.defaultFov,
+ telescopeFovDegrees:TELESCOPE_OPTICS.defaultFov,telescopeSession:0,
  cameraUnlocked:false,atLadder:false,observatoryPhase:'ground',observatoryHeight:0,
  reduceMotion:motionPreference?.matches??false,
  miningSky:createMiningSkyBridge(),

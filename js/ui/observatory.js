@@ -5,8 +5,12 @@ import {setTelescopeMagnification,telescopeFov,telescopeMagnification} from './o
 import {UFO_DIRECTION,projectTelescopeUfo} from '../scene/telescope-ufo.js';
 import {TELESCOPE_OPTICS} from '../scene/camera-settings.js';
 
-let panel,ladderButton,telescopeButton,zoomControl,zoomSlider,ufoButton,lastStatus='',lastUIKey='';
-let ufoSeenAt=null;
+let panel,ladderButton,telescopeButton,zoomControl,zoomSlider,ufoButton,ufoShot,ufoCrack,lastStatus='',lastUIKey='';
+const UFO_WARNING_CLICK=2,UFO_ATTACK_CLICK=4,UFO_WARNING_MS=2300,UFO_AIM_MS=230,UFO_SHOT_MS=240;
+const UFO_ANGRY_AFTER_IMPACT_MS=800,UFO_REACTION_COOLDOWN_MS=6600;
+let ufoClicks=0,ufoWarningUntil=null,ufoAttackAt=null;
+let ufoSession=-1,lensHits=0,impactApplied=false;
+function resetUfoReaction(){ufoClicks=0;ufoWarningUntil=null;ufoAttackAt=null;impactApplied=false;}
 export function installObservatoryUI(){
  panel=document.createElement('div');panel.className='observatory-panel';panel.hidden=true;
  panel.innerHTML='<p role="status" aria-live="polite"></p><button type="button" data-observe="climb" aria-label="上矢印キーで梯子を上る">↑ 上る</button><button type="button" data-observe="stop" aria-label="望遠鏡を閉じる。Escキーでも戻れます">戻る <kbd>Esc</kbd></button><button type="button" data-observe="descend" aria-label="下矢印キーで梯子を下りる">↓ 下りる</button>';
@@ -28,20 +32,42 @@ export function installObservatoryUI(){
  ufoButton=document.createElement('button');
  ufoButton.type='button';ufoButton.className='telescope-ufo';ufoButton.hidden=true;
  ufoButton.setAttribute('aria-label','UFOを望遠鏡で拡大する');
- for(const name of ['ufo1','ufo2']){
+ for(const [index,name] of ['ufo1','ufo2','ufo3'].entries()){
   const sprite=document.createElement('img');
   sprite.src=new URL('../../assets/'+name+'.png',import.meta.url).href;
+  if(index===2)sprite.className='ufo-angry';
   sprite.alt='';sprite.draggable=false;ufoButton.appendChild(sprite);
  }
- const prompt=document.createElement('span');prompt.textContent='Click me !!!';
  const greeting=document.createElement('span');greeting.className='ufo-greeting';greeting.textContent='hi , human';
- ufoButton.append(prompt,greeting);
+ const warning=document.createElement('span');warning.className='ufo-warning';
+ const angerIcon=document.createElement('img');angerIcon.src=new URL('../../assets/oko.png',import.meta.url).href;
+ angerIcon.alt='怒り';angerIcon.draggable=false;warning.appendChild(angerIcon);
+ ufoButton.append(greeting,warning);
+ ufoShot=document.createElement('div');ufoShot.className='telescope-ufo-shot';ufoShot.hidden=true;
+ ufoShot.setAttribute('aria-hidden','true');
+ ufoCrack=document.createElement('div');ufoCrack.className='telescope-ufo-crack';ufoCrack.hidden=true;
+ ufoCrack.setAttribute('aria-hidden','true');
+ ufoCrack.innerHTML=`<svg viewBox="0 0 1000 600" preserveAspectRatio="none">
+  <path class="ufo-crack-main" d="M536 306 503 275 470 277 388 205 365 150 304 129 268 62 197 0 M536 306 565 267 647 239 687 170 759 138 811 45 917 0 M536 306 573 314 610 293 670 324 725 304 822 335 873 310 1000 355 M536 306 557 357 603 384 595 456 661 504 669 600 M536 306 494 337 478 397 419 408 377 483 316 505 273 600 M536 306 474 312 448 344 378 351 341 327 279 367 192 343 118 390 0 380"/>
+  <path class="ufo-crack-branches" d="M365 150 327 173 285 162 247 195 M687 170 657 134 661 81 622 45 M822 335 850 374 905 396 929 455 M595 456 547 467 519 508 466 513 M377 483 355 449 320 436 277 448 M192 343 169 310 110 284 90 246 M503 275 515 252 550 244 565 267 581 291 573 314 557 357 521 358 494 337 474 312 470 277"/>
+  <g class="ufo-crack-spread">
+   <path pathLength="1" d="M503 275 512 217 483 179 496 126 472 75 490 17 M388 205 365 228 300 211 247 195 164 206 137 173 44 170 M268 62 228 87 169 67 122 115 28 98"/>
+   <path pathLength="1" d="M565 267 594 224 579 173 603 127 594 64 632 0 M647 239 693 254 734 218 798 223 847 189 894 205 975 184 M811 45 841 89 899 87 963 121 1000 106"/>
+   <path pathLength="1" d="M610 293 633 348 687 370 702 415 753 421 800 481 878 505 M661 504 700 481 759 512 781 563 858 592 M929 455 965 468 1000 520"/>
+   <path pathLength="1" d="M478 397 502 436 480 474 491 543 456 580 M419 408 415 458 430 491 401 542 410 600 M279 367 241 396 220 450 157 474 125 540 69 568 M118 390 81 422 18 439"/>
+  </g>
+ </svg>`;
  ufoButton.addEventListener('click',()=>{
-  if(state.observatoryPhase!=='viewing')return;
+  if(state.observatoryPhase!=='viewing'||ufoAttackAt!==null)return;
   state.orbitYaw=UFO_DIRECTION.yaw;state.orbitPitch=UFO_DIRECTION.pitch;
   setTelescopeMagnification(TELESCOPE_OPTICS.maxMagnification);
+  const now=performance.now();
+  if(ufoWarningUntil!==null&&now>=ufoWarningUntil)resetUfoReaction();
+  ufoClicks++;
+  if(ufoClicks===UFO_WARNING_CLICK)ufoWarningUntil=now+UFO_WARNING_MS;
+  if(ufoClicks===UFO_ATTACK_CLICK)ufoAttackAt=ufoWarningUntil;
  });
- document.body.append(ladderButton,telescopeButton,ufoButton);
+ document.body.append(ladderButton,telescopeButton,ufoButton,ufoShot,ufoCrack);
 }
 export function syncObservatoryUI(){
  if(!panel)return;
@@ -71,15 +97,43 @@ export function syncObservatoryUI(){
 }
 export function positionObservatoryHotspots(project,time){
  if(!ladderButton)return;
- const ufo=state.observatoryPhase==='viewing'&&projectTelescopeUfo(state.orbitYaw,state.orbitPitch,telescopeFov(),innerWidth,innerHeight);
+ const viewing=state.observatoryPhase==='viewing';
+ if(!viewing||ufoSession!==state.telescopeSession){
+  resetUfoReaction();
+  lensHits=0;
+  ufoSession=state.telescopeSession;
+ }
+ const travel=state.reduceMotion?0:UFO_SHOT_MS;
+ const now=performance.now();
+ const elapsed=ufoAttackAt===null?null:now-ufoAttackAt;
+ const warningExpired=ufoAttackAt===null&&ufoWarningUntil!==null&&now>=ufoWarningUntil;
+ const impactTime=UFO_AIM_MS+travel;
+ const recoveryTime=impactTime+UFO_ANGRY_AFTER_IMPACT_MS;
+ if(!impactApplied&&elapsed!==null&&elapsed>=impactTime){
+  impactApplied=true;
+  lensHits++;
+  const spread=1-1/lensHits;
+  ufoCrack.style.setProperty('--crack-spread',spread);
+  ufoCrack.style.setProperty('--crack-width',1.8+1.1*spread);
+ }
+ if(warningExpired||(elapsed!==null&&elapsed>=impactTime+UFO_REACTION_COOLDOWN_MS))resetUfoReaction();
+ const attacking=ufoAttackAt!==null&&elapsed>=0&&elapsed<recoveryTime;
+ const firing=attacking&&elapsed>=UFO_AIM_MS&&elapsed<impactTime;
+ const ufo=viewing&&projectTelescopeUfo(state.orbitYaw,state.orbitPitch,telescopeFov(),innerWidth,innerHeight);
+ if(firing&&ufoShot.hidden){
+  ufoShot.style.setProperty('--ufo-shot-x',`${ufo?.x??innerWidth/2}px`);
+  ufoShot.style.setProperty('--ufo-shot-y',`${ufo?.y??innerHeight/2}px`);
+ }
+ ufoShot.hidden=!firing;
+ ufoCrack.hidden=lensHits===0;
  ufoButton.hidden=!ufo;
  if(ufo){
-  ufoSeenAt??=time;
   ufoButton.style.left=`${ufo.x}px`;ufoButton.style.top=`${ufo.y}px`;
   ufoButton.style.setProperty('--ufo-size',`${ufo.size}px`);
-  ufoButton.classList.toggle('shows-alt',!state.reduceMotion&&Math.floor(time*2.5)%2===1);
-  ufoButton.classList.toggle('shows-greeting',Math.floor((time-ufoSeenAt)/2.6)%2===1);
- }else ufoSeenAt=null;
+  ufoButton.classList.toggle('is-warning',ufoWarningUntil!==null&&now<ufoWarningUntil);
+  ufoButton.classList.toggle('is-angry',attacking);
+  ufoButton.classList.toggle('shows-alt',!attacking&&!state.reduceMotion&&Math.floor(time*2.5)%2===1);
+ }
  const visible=state.entered&&!state.focused&&[OBSERVATORY.leftStage,OBSERVATORY.rightStage].includes(state.active);
  for(const [button,point,enabled] of [
   [ladderButton,STAIR_HOTSPOT,visible&&!state.atLadder],

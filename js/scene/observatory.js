@@ -19,6 +19,7 @@ export function descendLadder(){
 export function useTelescope(){
  if(state.observatoryPhase!=='top')return false;
  resetWorldCamera();state.orbitYaw=TELESCOPE_HOME.yaw;state.orbitPitch=TELESCOPE_HOME.pitch;
+ state.telescopeSession++;
  state.cameraUnlocked=true;state.observatoryPhase='viewing';return true;
 }
 export function stopViewing(){
