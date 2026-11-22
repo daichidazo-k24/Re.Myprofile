@@ -1,4 +1,4 @@
-/** Original 5-stage navigation and focus states; only board content is continuous. */
+/** Stage navigation and board focus. */
 import {STAGES,STEP} from '../data/stages.js';
 import {state} from '../state.js';
 import {beep} from './audio.js';

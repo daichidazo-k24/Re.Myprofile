@@ -3,7 +3,9 @@ import {selectStage,toggleFocus,setFocus} from './navigation.js';
 import {scrollBoard,scrollToStart,scrollToEnd} from './board-scroll.js';
 import {isGalleryOverlayActive} from './gallery.js';
 import {rotateWorld,zoomWorld,panWorld,resetWorldCamera,telescopeLookSensitivity} from './orbit-camera.js';
-import {approachLadder,climbLadder,descendLadder,stopViewing} from '../scene/observatory.js';
+import {approachLadder,climbLadder,descendLadder,stopViewing,useTelescope} from '../scene/observatory.js';
+import {OBSERVATORY} from '../scene/observatory-layout.js';
+import {STAGES} from '../data/stages.js';
 
 /** World mode: click/drag, touch gestures and trackpad update the actual camera.
  * Focus mode: native scroll and links on the live HTML board stay interactive.
@@ -55,6 +57,7 @@ export function bindControls(intro){
    }
   }else{
    if(state.observatoryPhase!=='ground'){
+    if(event.key==='Enter'&&state.observatoryPhase==='top'){event.preventDefault();useTelescope();return}
     if(event.key==='ArrowDown'&&!state.cameraUnlocked){event.preventDefault();descendLadder();return}
     if(!state.cameraUnlocked){if(event.key.startsWith('Arrow'))event.preventDefault();return}
     if(event.key.startsWith('Arrow')){
@@ -66,8 +69,9 @@ export function bindControls(intro){
    if(['ArrowRight','ArrowLeft','PageDown','PageUp',' '].includes(event.key)){
     event.preventDefault();
     const direction=['ArrowLeft','PageUp'].includes(event.key)?-1:1;
-    if(state.atLadder){selectStage(direction<0?3:4);return}
-    if((state.active===3&&direction===1)||(state.active===4&&direction===-1)){approachLadder();return}
+    const {leftStage,rightStage}=OBSERVATORY;
+    if(state.atLadder){selectStage(direction<0?leftStage:rightStage);return}
+    if((state.active===leftStage&&direction===1)||(state.active===rightStage&&direction===-1)){approachLadder();return}
     selectStage(state.active+direction);return;
    }
    if(event.key==='ArrowUp'){event.preventDefault();if(!climbLadder())rotateWorld(0,.12);return}
@@ -77,7 +81,7 @@ export function bindControls(intro){
    }
    if(event.key==='0'){resetWorldCamera();return}
   }
-  if(/^[1-6]$/.test(event.key)){selectStage(Number(event.key)-1);return}
+  if(/^[1-9]$/.test(event.key)&&Number(event.key)<=STAGES.length){selectStage(Number(event.key)-1);return}
   if(['Enter','z','Z'].includes(event.key)){event.preventDefault();toggleFocus();return}
   if(event.key.toLowerCase()==='r'){intro.replay();return}
  });

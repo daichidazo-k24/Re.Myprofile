@@ -22,7 +22,7 @@ test('art files support posters, headers, spaces and nested names within Graphic
 });
 
 test('floating board hit-testing follows the real projected face through orbit and zoom',()=>{
- assert.deepEqual(GRAPHIC_STAGES,[2,3]);assert.equal(GRAPHIC_BOARD.x,32.5);
+ assert.deepEqual(GRAPHIC_STAGES,[1,2]);assert.equal(GRAPHIC_BOARD.x,19);
  assert.equal(GRAPHIC_BOARD.y,1.35);assert.equal(GRAPHIC_BOARD.z,3.35);
  assert.equal(GRAPHIC_BOARD.tilt,-.30);assert.equal(GRAPHIC_BOARD.scale,.78);
  for(const [width,height] of [[1440,900],[390,844]])for(const yaw of [-.8,.14,.8])for(const distance of [12,17.5,30]){

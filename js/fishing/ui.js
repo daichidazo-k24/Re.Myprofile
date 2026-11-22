@@ -4,10 +4,10 @@ import {FISH_IMAGES} from './data.js';
 import {FISHING_CONTENT} from '../content/fishing.js';
 import {fishingState,startCast,finishCast,resetCast} from './state.js';
 import {state} from '../state.js';
-import {STAGES} from '../data/stages.js';
+import {STAGE_INDEX} from '../data/stages.js';
 import {onNavigate} from '../ui/navigation.js';
 import {beep} from '../ui/audio.js';
-const fishingIndex=STAGES.findIndex(s=>s.id==='fishing');
+const fishingIndex=STAGE_INDEX.fishing;
 let hotspot=null,dialog=null,gallery=null,castTimer=0,lastAnchor=0;
 const isFishing=()=>state.entered&&state.active===fishingIndex;
 /** Gallery dialogs are modal: background camera controls must not consume any input. */

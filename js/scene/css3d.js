@@ -1,5 +1,5 @@
 /** Original CSS3D stage geometry/camera, with ONLY the whiteboard interior made continuous. */
-import {STAGES,STEP} from '../data/stages.js';
+import {STAGE_INDEX,STAGES,STEP} from '../data/stages.js';
 import {renderStageDocument} from '../ui/document.js';
 import {state} from '../state.js';
 import {selectStage,toggleFocus,onNavigate} from '../ui/navigation.js';
@@ -11,12 +11,138 @@ import {createNotebookFallback} from '../graphic/notebook.js';
 import {createSkyBackdrop} from './sky-backdrop.js';
 import {createSkyCamera,updateCSSSkyCamera,updateSkyCamera} from './sky-camera.js';
 import {skyDomeDirection} from './sky-dome.js';
-import {OBSERVATORY,updateObservatory} from './observatory.js';
+import {updateObservatory} from './observatory.js';
+import {STAIR_HOTSPOT,TELESCOPE_POSITION,buildRooftopTelescope,observatoryCameraOffset,observatoryClimberPose} from './observatory-layout.js';
 import {syncObservatoryUI,positionObservatoryHotspots} from '../ui/observatory.js';
 import {worldCameraPose,telescopeFov,cssTelescopeView} from '../ui/orbit-camera.js';
 import {WORLD_CAMERA} from './camera-settings.js';
+import {TREEHOUSE_TOP,buildIslandLandscape} from './island-landscape.js';
+import {FRUIT_GLOW,collectFruitShadows,createFruitGlow,fruitLights,islandFaceLight,rasterIslandFace} from './island-lighting.js';
+import {createFrostSprite,frostFlakes,frostPose,showIslandFrost} from './island-frost.js';
+import {hex} from './math.js';
 
 const CSS_SCALE=.674;
+const CSS_STAGE_STEP=800;
+const CSS_WORLD_UNITS=CSS_STAGE_STEP/STEP;
+const CSS_ISLAND_DEPTH=79;
+const CSS_ISLAND_GROUND=193;
+const CSS_ISLAND_VERTICAL_UNIT=72;
+const BADGES_X=STAGE_INDEX.badges*STEP;
+const BADGES_VIEW_SPAN=(TREEHOUSE_TOP+3.56)*CSS_ISLAND_VERTICAL_UNIT;
+const BADGES_VIEW_CENTER=CSS_ISLAND_GROUND-(TREEHOUSE_TOP-3.56)*CSS_ISLAND_VERTICAL_UNIT/2;
+const ISLAND_FACES=[
+ ['front',0,0,1],['back',0,0,-1],['left',-1,0,0],['right',1,0,0],['top',0,1,0],['bottom',0,-1,0],
+];
+
+function islandTransform(x,y,z){
+ return `translate3d(${x*CSS_WORLD_UNITS}px,${CSS_ISLAND_GROUND-y*CSS_ISLAND_VERTICAL_UNIT}px,${CSS_ISLAND_DEPTH+z*CSS_WORLD_UNITS}px)`;
+}
+
+function createFrostLayer(world){
+ const layer=document.createElement('div');
+ layer.className='island-frost';
+ layer.setAttribute('aria-hidden','true');
+ layer.hidden=true;
+ const src=createFrostSprite().toDataURL();
+ const flakes=frostFlakes.map(flake=>{
+  const node=document.createElement('img');
+  node.alt='';node.src=src;
+  node.style.width=`${flake.size*CSS_WORLD_UNITS}px`;
+  node.style.height=`${flake.size*CSS_ISLAND_VERTICAL_UNIT}px`;
+  node.style.opacity=String(flake.tint);
+  layer.appendChild(node);
+  return node;
+ });
+ world.appendChild(layer);
+ let time=0;
+ const pose=new Float32Array(4);
+ return (cameraX,dt)=>{
+  const visible=showIslandFrost(state);
+  layer.toggleAttribute('hidden',!visible);
+  if(!visible)return;
+  if(!state.reduceMotion)time+=Math.min(dt,.045);
+  for(const [i,flake] of frostFlakes.entries()){
+   const node=flakes[i];
+   const nearby=Math.abs(flake.x-cameraX)<=22;
+   node.toggleAttribute('hidden',!nearby);
+   if(!nearby)continue;
+   frostPose(flake,time,pose);
+   const [x,y,z,size]=pose;
+   node.style.transform=islandTransform(x,y,z)+` translate(-50%,-50%) scale(${size/flake.size})`;
+  }
+ };
+}
+
+function applyLightAtlas(island,entries){
+ if(!entries.length)return;
+ // Pack the small face textures into one bitmap. Padding repeats the edge pixels.
+ entries.sort((a,b)=>b.field.rows-a.field.rows);
+ const width=1024;
+ let x=0,y=0,rowHeight=0;
+ for(const entry of entries){
+  const {columns,rows}=entry.field;
+  if(x+columns+2>width){y+=rowHeight;x=0;rowHeight=0}
+  entry.x=x+1;entry.y=y+1;
+  x+=columns+2;rowHeight=Math.max(rowHeight,rows+2);
+ }
+ const height=y+rowHeight;
+ const canvas=document.createElement('canvas');
+ canvas.width=width;canvas.height=height;
+ const ctx=canvas.getContext('2d');
+ const pixels=ctx.createImageData(width,height);
+ for(const {face,field,x,y} of entries){
+  const {columns,rows,colors}=field;
+  for(let row=-1;row<=rows;row++)for(let col=-1;col<=columns;col++){
+   const sourceRow=rows-1-Math.max(0,Math.min(rows-1,row));
+   const sourceCol=Math.max(0,Math.min(columns-1,col));
+   const i=(sourceRow*columns+sourceCol)*3,j=((y+row)*width+x+col)*4;
+   pixels.data[j]=colors[i];pixels.data[j+1]=colors[i+1];pixels.data[j+2]=colors[i+2];pixels.data[j+3]=255;
+  }
+  face.classList.add('stage-landscape-lit');
+  face.style.backgroundSize=`${width/columns*100}% ${height/rows*100}%`;
+  face.style.backgroundPosition=`${x/(width-columns)*100}% ${y/(height-rows)*100}%`;
+ }
+ ctx.putImageData(pixels,0,0);
+ island.style.setProperty('--forest-light-atlas',`url("${canvas.toDataURL()}")`);
+}
+
+function createCubeGroup(build){
+ const island=document.createElement('div');
+ island.className='stage-landscape';
+ island.setAttribute('aria-hidden','true');
+ const cubes=document.createDocumentFragment();
+ const cuboids=[],litFaces=[];
+ build((...cuboid)=>cuboids.push(cuboid));
+ const shadows=collectFruitShadows(cuboids);
+ for(const [x,y,z,width,height,depth,color,emissive] of cuboids){
+  const cube=document.createElement('div');
+  cube.className='stage-landscape-cube';
+  cube.style.transform=islandTransform(x,y,z);
+  cube.style.setProperty('--cube-width',`${width*CSS_WORLD_UNITS}px`);
+  cube.style.setProperty('--cube-height',`${height*CSS_ISLAND_VERTICAL_UNIT}px`);
+  cube.style.setProperty('--cube-depth',`${depth*CSS_WORLD_UNITS}px`);
+  const rgb=hex(color);
+  for(const [direction,nx,ny,nz] of ISLAND_FACES){
+   const face=document.createElement('i');
+   face.className=`stage-landscape-${direction}`;
+   const center=[x+nx*width/2,y+ny*height/2,z+nz*depth/2];
+   const u=nx?[0,0,-nx*depth]:[nz===-1?-width:width,0,0];
+   const v=ny?[0,0,-ny*depth]:[0,height,0];
+   const field=rasterIslandFace(rgb,center,u,v,[nx,ny,nz],emissive,shadows);
+   if(field)litFaces.push({face,field});
+   else{
+    const lit=islandFaceLight(rgb,...center,nx,ny,nz,emissive,shadows);
+    face.style.backgroundColor=`rgb(${lit.map(channel=>Math.round(channel*255)).join(',')})`;
+   }
+   cube.appendChild(face);
+  }
+  cubes.appendChild(cube);
+ }
+ applyLightAtlas(island,litFaces);
+ island.appendChild(cubes);
+ return island;
+}
+
 export function startCSS3D(){
  document.body.classList.add('css3d-renderer');
  const viewport=document.createElement('div');viewport.id='css3dFallback';viewport.className='css3d-viewport';
@@ -41,7 +167,10 @@ export function startCSS3D(){
 </svg><div class="fish-anchor"></div><div class="fish-pixel-stars"></div><div class="fishing-island-marker">EDGE OF THE ISLAND / FISHING SPOT</div></div>`;
    world.appendChild(stage);stages.push(stage);return;
   }
-  stage.innerHTML=`<div class="css3d-back"></div><div class="board-popup-title" aria-hidden="true">${meta.boardHeading}</div><div class="css3d-frame"><span class="corner-led"></span><div class="card-cut board-scroll-area" tabindex="0" role="region" aria-label="${meta.short} の連続スクロール資料"><div class="board-scroll-sized"><div class="board-scroll-sheet">${renderStageDocument(i)}</div></div></div><span class="monitor-scroll-track" aria-hidden="true"><span></span></span></div><div class="sprite-podium"></div><img class="css-miner" src="${new URL('../../assets/miner.png',import.meta.url).href}" alt=""><div class="block-stack">${Array.from({length:6},(_,j)=>`<div class="voxel" style="--d:${(j%3)*22}px;--delay:${j*.2}s"></div>`).join('')}</div><div class="stage-plinth"></div>`;
+  stage.innerHTML=`<div class="css3d-back"></div><div class="board-popup-title" aria-hidden="true">${meta.boardHeading}</div><div class="css3d-frame"><span class="corner-led"></span><div class="card-cut board-scroll-area" tabindex="0" role="region" aria-label="${meta.short} の連続スクロール資料"><div class="board-scroll-sized"><div class="board-scroll-sheet">${renderStageDocument(i)}</div></div></div><span class="monitor-scroll-track" aria-hidden="true"><span></span></span></div><div class="sprite-podium"></div><img class="css-miner" src="${new URL('../../assets/miner.png',import.meta.url).href}" alt="">`;
+  if(meta.id==='profile'){
+   stage.insertAdjacentHTML('beforeend',`<div class="block-stack">${Array.from({length:6},(_,j)=>`<div class="voxel" style="--d:${(j%3)*22}px;--delay:${j*.2}s"></div>`).join('')}</div>`);
+  }
   world.appendChild(stage);stages.push(stage);
   if(i===GRAPHIC_STAGES[0]){
    const graphic=document.createElement('button');graphic.type='button';graphic.className='css-graphic-board';
@@ -79,12 +208,34 @@ export function startCSS3D(){
    else if(!state.focused)toggleFocus();
   });
  });
- const observatory=document.createElement('div');observatory.className='css-observatory';
- observatory.style.transform=`translate3d(${OBSERVATORY.x/STEP*800}px,0,${OBSERVATORY.z/STEP*800}px)`;
- observatory.innerHTML=`<div class="ladder"></div><div class="landing"></div><svg class="telescope" viewBox="0 0 155 130" aria-hidden="true"><path d="M75 55 L40 125 M75 55 L105 125 M75 55 L75 125" stroke="#9fb8d9" stroke-width="9" fill="none"/><g transform="rotate(-22 75 40)"><path d="M15 30 H35 V50 H15Z" fill="#182548"/><path d="M35 20 H130 V60 H35Z" fill="#e6ad59" stroke="#ffd083" stroke-width="5"/><path d="M120 14 H140 V66 H120Z" fill="#263c64"/><path d="M135 20 H145 V60 H135Z" fill="#84e0ca"/></g></svg><img class="observatory-miner" src="assets/miner.png" alt=""><i class="ladder-anchor" style="position:absolute;top:150px"></i><i class="telescope-anchor" style="position:absolute;left:60px;top:-375px"></i>`;
- world.appendChild(observatory);
- const ladderAnchor=observatory.querySelector('.ladder-anchor'),telescopeAnchor=observatory.querySelector('.telescope-anchor');
- const climber=observatory.querySelector('.observatory-miner');
+ const telescope=createCubeGroup(buildRooftopTelescope);
+ world.prepend(createCubeGroup(buildIslandLandscape),telescope);
+ const fruitGlowSrc=createFruitGlow().toDataURL();
+ for(const [x,y,z] of fruitLights){
+  const glow=document.createElement('img');
+  glow.className='forest-fruit-glow';
+  glow.alt='';
+  glow.src=fruitGlowSrc;
+  glow.style.width=`${FRUIT_GLOW.width*CSS_WORLD_UNITS}px`;
+  glow.style.height=`${FRUIT_GLOW.height*CSS_ISLAND_VERTICAL_UNIT}px`;
+  glow.style.transform=islandTransform(x,y,z+FRUIT_GLOW.offsetZ)+' translate(-50%,-50%)';
+  world.appendChild(glow);
+ }
+ const updateFrost=createFrostLayer(world);
+ function makeAnchor(point){
+  const [x,y,z]=point,anchor=document.createElement('i');
+  anchor.className='observatory-anchor';
+  anchor.style.transform=islandTransform(x,y,z);
+  anchor.setAttribute('aria-hidden','true');
+  world.appendChild(anchor);
+  return anchor;
+ }
+ const stairAnchor=makeAnchor(STAIR_HOTSPOT);
+ const telescopeAnchor=makeAnchor(TELESCOPE_POSITION);
+ const climber=document.createElement('img');
+ climber.className='observatory-miner';
+ climber.alt='';
+ world.appendChild(climber);
  // The shared celestial sphere replaces screen-fixed decorative light dots.
  if(!backdrop){
   const stars=document.createElement('div');stars.className='css3d-star-panorama';
@@ -92,10 +243,12 @@ export function startCSS3D(){
  }
  document.getElementById('worldCanvas').insertAdjacentElement('afterend',viewport);
  function applyPositions(){stages.forEach((stage,i)=>{
-  const baseZ=i%2===0?-15:-100,focusZ=state.focused?(i===state.active?140:-260-Math.abs(i-state.active)*45):0;
+  const fishing=stage.dataset.stage==='fishing';
+  const baseZ=fishing?-100:-15,focusZ=state.focused?(i===state.active?140:-260-Math.abs(i-state.active)*45):0;
   const focusX=state.focused?(i-state.active)*35:0;
-  const scale=state.focused?(i===state.active?1.08:.9):1,rot=state.focused&&i===state.active?0:i%2===0?0:6;
-  stage.style.transform=`translate3d(${i*800+focusX}px,0,${baseZ+focusZ}px) rotateY(${rot}deg) scale(${scale})`;
+  const scale=state.focused?(i===state.active?1.08:.9):1;
+  const rot=fishing?6:(state.focused&&i===state.active?0:i%2*3);
+  stage.style.transform=`translate3d(${i*CSS_STAGE_STEP+focusX}px,0,${baseZ+focusZ}px) rotateY(${rot}deg) scale(${scale})`;
   stage.classList.toggle('is-focus-target',state.focused&&i===state.active);
   stage.classList.toggle('is-miner-active',i===state.active);
  });}
@@ -105,41 +258,53 @@ export function startCSS3D(){
   if(!running)return;
   const dt=lastFrame?(now-lastFrame)/1000:0;lastFrame=now;
   updateObservatory(dt);syncObservatoryUI();
-  const climbSprite=['climbing','descending'].includes(state.observatoryPhase)?'sub'+(Math.floor(now/150)%2+1)+'.png':'miner.png';
+  const actor=observatoryClimberPose(state.observatoryHeight);
+  const climbSprite=actor.onLadder?'sub'+(Math.floor(now/150)%2+1)+'.png':'miner.png';
   if(climber.dataset.pose!==climbSprite){
    climber.src=new URL('../../assets/'+climbSprite,import.meta.url).href;climber.dataset.pose=climbSprite;
   }
   climber.hidden=!state.atLadder||state.observatoryPhase==='viewing';
-  observatory.querySelector('.telescope').style.visibility=state.observatoryPhase==='viewing'?'hidden':'visible';
-  climber.style.top=`${90-state.observatoryHeight*(800/STEP)}px`;
-  climber.style.left=['top','viewing'].includes(state.observatoryPhase)?'-100px':'-57px';
+  telescope.hidden=state.observatoryPhase==='viewing';
+  climber.style.transform=islandTransform(actor.x,actor.y,actor.z)+' translate(-50%,-100%)';
   const baseScale=Math.max(.30,Math.min(1.05,innerWidth/(innerWidth<680?1110:1330)));
   state.cameraX+=(state.aim-state.cameraX)*(state.reduceMotion?1:.07);
   state.focusMix+=((state.focused?1:0)-state.focusMix)*(state.reduceMotion?1:.09);
+  updateFrost(state.cameraX,dt);
   // Orbit the *entire world* around the currently selected stage. The label is
   // a DOM sibling of its board, hence inherits the identical stage rotation.
   const f=state.focusMix;
   const yawDeg=(-state.orbitYaw*180/Math.PI)*(1-f)+(-2)*f;
   const pitchDeg=(-state.orbitPitch*180/Math.PI)*(1-f)+1.2*f;
   const zoom=(17.5-state.orbitDistance)*41*(1-f);
-  const z=(state.entered?35:-360)*(1-f)+(state.entered?90:-140)*f+zoom;
+  const [routeX,routeY,routeZ]=state.atLadder?observatoryCameraOffset(state.observatoryHeight):[0,0,0];
+  const z=(state.entered?35:-360)*(1-f)+(state.entered?90:-140)*f+zoom-routeZ*CSS_WORLD_UNITS*baseScale;
   const cameraLift=WORLD_CAMERA.targetHeight+WORLD_CAMERA.distance*Math.sin(WORLD_CAMERA.pitch)-2.65;
-  const y=((state.entered?0:-12)+cameraLift*(800/STEP)*baseScale)*(1-f)+113*f -state.orbitPanY*48*(1-f)+state.observatoryHeight*(800/STEP)*baseScale;
+  const y=((state.entered?0:-12)+cameraLift*(800/STEP)*baseScale)*(1-f)+113*f -state.orbitPanY*48*(1-f)+routeY*CSS_ISLAND_VERTICAL_UNIT*baseScale;
   const panOffset=state.orbitPanX*59*(1-f);
-  const stageX=state.cameraX/STEP*800;
+  const stageX=(state.cameraX+routeX)*CSS_WORLD_UNITS;
   if(state.observatoryPhase==='viewing'){
-   const pose=worldCameraPose(state.cameraX),view=cssTelescopeView(pose.eye,pose.target,innerHeight,800/STEP);
+   const pose=worldCameraPose(state.cameraX);
+   const view=cssTelescopeView(pose.eye,pose.target,innerHeight,CSS_WORLD_UNITS,{
+    ground:CSS_ISLAND_GROUND, depth:CSS_ISLAND_DEPTH,
+    verticalUnit:CSS_ISLAND_VERTICAL_UNIT,
+   });
    viewport.style.perspective=`${view.perspective}px`;
    world.style.transform=`matrix3d(${Array.from(view.matrix).join(',')})`;
    updateSkyCamera(skyCamera,pose.eye,pose.target,telescopeFov(),innerWidth/innerHeight);
   }else{
    viewport.style.perspective='';
-   world.style.transform=`translate3d(${panOffset}px,${y}px,${z}px) rotateY(${yawDeg}deg) rotateX(${pitchDeg}deg) scale(${baseScale}) translate3d(${-stageX}px,0,0)`;
+   // Preserve the original map magnification and the roof framing at BADGES.
+   const approach=Math.max(0,1-Math.abs(state.cameraX-BADGES_X)/STEP);
+   const fit=state.atLadder?0:approach*(1-f);
+   const fitScale=Math.min(baseScale,Math.max(.23,(innerHeight-116)/BADGES_VIEW_SPAN));
+   const worldScale=baseScale+(fitScale-baseScale)*fit;
+   const frameOffset=fit*(innerHeight*.065-BADGES_VIEW_CENTER*fitScale-cameraLift*CSS_WORLD_UNITS*baseScale);
+   world.style.transform=`translate3d(${panOffset}px,${y+frameOffset}px,${z}px) rotateY(${yawDeg}deg) rotateX(${pitchDeg}deg) scale(${worldScale}) translate3d(${-stageX}px,0,0)`;
    updateCSSSkyCamera(skyCamera,{width:innerWidth,height:innerHeight,perspective:innerWidth<=800?880:1120,
     scale:baseScale,yaw:yawDeg*Math.PI/180,pitch:pitchDeg*Math.PI/180,x:panOffset,y,z,stageX,units:800/STEP});
   }
   positionObservatoryHotspots(point=>{
-   const anchor=point[1]<2?ladderAnchor:telescopeAnchor;
+   const anchor=point===STAIR_HOTSPOT?stairAnchor:telescopeAnchor;
    const rect=anchor.getBoundingClientRect();return {x:rect.x,y:rect.y};
   });
   if(backdrop)backdrop.draw(state,dt,skyCamera);

@@ -14,7 +14,7 @@
 .telescope-zoom input{writing-mode:vertical-lr;direction:rtl;width:32px;height:clamp(100px,30vh,260px);margin:0;accent-color:#e6ad59;cursor:pointer;touch-action:none}
 .telescope-zoom input:focus-visible{outline:1px solid #e6ad59;outline-offset:3px}
 .observatory-hotspot{position:fixed;z-index:8;transform:translate(-50%,-50%);font:400 13px/1.4 sans-serif;color:#f3dfbc}
-.ladder-hotspot{opacity:.8}
+.ladder-hotspot{min-height:44px;padding:6px 12px;background:#2d2334ea;border:1px solid #d5a36b;color:#fff0d2;white-space:nowrap}
 .telescope-hotspot{width:96px;height:76px;display:flex;align-items:flex-end;justify-content:center;padding:0}
 .telescope-hotspot span{white-space:nowrap;padding:5px 10px;transform:translateY(20px);background:#152440f2;border:1px solid #ffcf7f;color:#ffdda2;opacity:1}
 .telescope-hotspot:hover span,.telescope-hotspot:focus-visible span{opacity:1}
@@ -30,9 +30,6 @@ body.is-telescope-view .css3d-frame{pointer-events:none}
 body.is-at-ladder .css3d-stage .css-miner{display:none}
 .css3d-stage[data-stage='quests'] .block-stack{display:none}
 body.is-observing .side-action{visibility:hidden;pointer-events:none}
-.css-observatory{position:absolute;transform-style:preserve-3d;pointer-events:none}
-.css-observatory .ladder{position:absolute;left:-34px;top:-280px;width:68px;height:475px;border-left:9px solid #e6ad59;border-right:9px solid #e6ad59;background:repeating-linear-gradient(to top,transparent 0 21px,#ffd083 21px 28px);filter:drop-shadow(5px 4px #273654)}
-.css-observatory .landing{position:absolute;left:-112px;top:-290px;width:224px;height:24px;background:#9fb8d9;border-bottom:15px solid #34486f;transform:translateZ(-30px)}
-.css-observatory .telescope{position:absolute;left:-10px;top:-420px;width:155px;height:130px;transform:translateZ(-30px)}
-.css-observatory .observatory-miner{position:absolute;left:-57px;top:90px;width:114px;image-rendering:pixelated;transform:translateZ(30px)}
+.observatory-anchor,.observatory-miner{position:absolute;left:0;top:0;pointer-events:none}
+.observatory-miner{width:114px;image-rendering:pixelated}
 @media(prefers-reduced-motion:reduce){.observatory-panel button,.telescope-hotspot span{transition:none}}

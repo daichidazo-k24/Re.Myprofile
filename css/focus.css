@@ -12,7 +12,7 @@ body.is-focus-mode .notification{opacity:0!important}
 
 body.is-focus-mode .css3d-stage{opacity:.22;filter:blur(1.5px) saturate(.75);transition:transform .45s ease,opacity .35s ease,filter .35s ease}
 body.is-focus-mode .css3d-stage.is-focus-target{opacity:1;filter:none;z-index:3}
-body.is-focus-mode .css3d-stage.is-focus-target .css3d-frame{box-shadow:inset 5px 5px #c0d5e6,inset -6px -6px #26386d,0 0 0 3px rgba(255,208,112,.5),20px 18px 0 #14203d,0 0 50px rgba(246,141,31,.26)}
+body.is-focus-mode .css3d-stage.is-focus-target .css3d-frame{box-shadow:inset 5px 5px #c0d5e6,inset -6px -6px #26386d,0 0 0 2px #b9d7fa7f,20px 18px 0 #14203d}
 body.is-focus-mode .css3d-stage.is-focus-target .stage-label{color:#ffcf74}
 body.is-focus-mode .css3d-stage.is-focus-target .css-miner{display:none}
 body.is-focus-mode .css3d-stage.is-focus-target .sprite-podium{display:none}

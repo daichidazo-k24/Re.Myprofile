@@ -14,7 +14,7 @@ import {installGraphicUI} from './graphic/ui.js';
 import {installObservatoryUI} from './ui/observatory.js';
 
 // The actual HTML documents are already semantic DOM inside the drawable canvas.
-// Do not duplicate all five long documents into a hidden accessibility mirror.
+// Do not duplicate the long documents into a hidden accessibility mirror.
 renderNavigation();
 installObservatoryUI();
 // Preserve original WebGL world and stage architecture; only the whiteboard

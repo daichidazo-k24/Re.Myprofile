@@ -21,23 +21,18 @@ function profile(){
  ${group(esc(p.profileContent.sectionTitles.hobbies),`${tags(p.hobbies)}<p>${esc(p.hobbiesDescription)}</p>`,'profile-hobbies')}
  ${group(esc(p.profileContent.sectionTitles.links),`<p>${esc(p.socialDescription)}</p><div class="doc-links">${p.socialLinks.map(l=>a(l.url,l.label)).join('')}</div>`,'profile-links')}`;
 }
-function skills(){return `${label('02','SKILL TREE','LEARNING / CRAFTING')}
- <header class="doc-heading"><span>EQUIPPED ABILITIES</span><h1>${esc(p.skillsContent.heading)}</h1><p class="doc-lead">${esc(p.skillsContent.lead)}</p></header>
- ${group(esc(p.skillsContent.sectionTitles.languages),tags(p.languages),'skills-programming')}
- ${group(esc(p.skillsContent.sectionTitles.security),tags(p.security),'skills-security')}
- ${group(esc(p.skillsContent.sectionTitles.tools),tags(p.producedWith),'skills-tools')}`;}
-function projects(){return `${label('03','ITEM COLLECTION','PROJECTS / BUILDS')}
+function projects(){return `${label('02','ITEM COLLECTION','PROJECTS / BUILDS')}
  <header class="doc-heading"><span>FEATURED BUILDS</span><h1>${esc(p.projectsContent.heading)}</h1><p class="doc-lead">${esc(p.projectsContent.lead)}</p></header>
  ${p.projects.map((pr,i)=>group(`<span class="doc-num">0${i+1}</span> ${esc(pr.name)}`,`<span class="doc-type">${esc(pr.type)}</span><p>${esc(pr.description)}</p>${pr.learning?`<h3>${esc(p.projectsContent.sectionTitles.learning)}</h3><p>${esc(pr.learning)}</p>`:''}<h3>${esc(p.projectsContent.sectionTitles.tech)}</h3>${tags(pr.tech)}${pr.demoPasswordNote?`<div class="doc-note">${esc(pr.demoPasswordNote)}</div>`:''}<div class="doc-actions">${a(pr.repo,'GitHub リポジトリ')}${pr.demo?a(pr.demo,'MAP Demo'):''}</div>`,`project-${i}`)).join('')}`;}
-function quests(){return `${label('04','QUEST LOG','OUTSIDE THE CLASSROOM')}
+function quests(){return `${label('03','QUEST LOG','OUTSIDE THE CLASSROOM')}
  <header class="doc-heading"><span>ACTIVITY RECORDS</span><h1>${esc(p.questsContent.heading)}</h1><p class="doc-lead">${esc(p.questsContent.lead)}</p></header>
  ${group(esc(p.questsContent.sectionTitles.activities),entries(p.activities),'quest-timeline')}
  ${group(esc(p.questsContent.sectionTitles.insight),`<p>${esc(p.activityInsight)}</p>`,'quest-insight')}`;}
-function badges(){return `${label('05','ACHIEVEMENTS','COLLECTED BADGES')}
+function badges(){return `${label('04','ACHIEVEMENTS','COLLECTED BADGES')}
  <header class="doc-heading"><span>UNLOCKED BADGES</span><h1>${esc(p.badgesContent.heading)}</h1><p class="doc-lead">${esc(p.badgesContent.lead)}</p></header>
  ${group(esc(p.badgesContent.sectionTitles.qualifications),entries(p.qualifications),'badges-list')}
  ${group(esc(p.badgesContent.sectionTitles.next),`<div class="doc-note"><strong>学習中</strong><p>${esc(p.studying)}</p></div>`,'badges-next')}`;}
-const bodies={profile,skills,projects,quests,badges};
+const bodies={profile,projects,quests,badges};
 export function renderStageDocument(stage){
  const obj=typeof stage==='number'?STAGES[stage]:stage;
  if(!obj||!bodies[obj.id])throw Error('Unknown stage');

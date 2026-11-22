@@ -1,6 +1,6 @@
 /** Fishing jetty sits in the VOID beyond the final badge-island edge. No whiteboard. */
 import {fishingState} from './state.js';
-import {STEP} from '../data/stages.js';
+import {STAGE_INDEX,STEP} from '../data/stages.js';
 // All rod segments share exact endpoints. The first endpoint is fixed to the pier;
 // the last endpoint is the attachment point for the line, tip block and hook.
 export const ROD_POINTS=[
@@ -9,7 +9,8 @@ export const ROD_POINTS=[
  [1.50,4.22,1.15],
  [3.20,5.12,1.15]
 ];
-export const FISH_WORLD={x:5*STEP,hookX:5*STEP+ROD_POINTS.at(-1)[0],hookY:1.0,hookZ:ROD_POINTS.at(-1)[2],rodTipY:ROD_POINTS.at(-1)[1]};
+const fishingX=STAGE_INDEX.fishing*STEP;
+export const FISH_WORLD={x:fishingX,hookX:fishingX+ROD_POINTS.at(-1)[0],hookY:1.0,hookZ:ROD_POINTS.at(-1)[2],rodTipY:ROD_POINTS.at(-1)[1]};
 // A box has its length along local Y; rotate around Z so it reaches endpoint B.
 export function segmentGeometry(a,b){
  const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2];
@@ -19,7 +20,7 @@ export function segmentGeometry(a,b){
 
 export function drawFishingWorld({box},t){
  const x=FISH_WORLD.x;
- // The fifth island ENDS to the left. Only a short wooden pier continues into open air.
+ // The island ends to the left. Only a short wooden pier continues into open air.
  for(let j=0;j<7;j++){
   const px=x-5.5+j*.84;
   box(px,-.35,1.4,.82,.36,3.5,j%2?'#735885':'#50699d');

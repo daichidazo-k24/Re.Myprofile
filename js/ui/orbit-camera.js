@@ -2,7 +2,7 @@
  * Telescope yaw/pitch change the viewing ray; its eye never orbits the island.
  */
 import {state} from '../state.js';
-import {TELESCOPE_EYE} from '../scene/observatory-layout.js';
+import {TELESCOPE_EYE,observatoryCameraOffset} from '../scene/observatory-layout.js';
 import {M} from '../scene/math.js';
 import {WORLD_CAMERA,TELESCOPE_OPTICS} from '../scene/camera-settings.js';
 export const CAMERA_LIMITS=Object.freeze({yaw:1.36,minPitch:-.21,maxPitch:1.27,minDistance:9,maxDistance:43,maxPan:4.4});
@@ -39,7 +39,8 @@ export function worldCameraPose(stageX){
   const eye=[...TELESCOPE_EYE],cp=Math.cos(p);
   return {eye,target:[eye[0]+Math.sin(y)*cp,eye[1]+Math.sin(p),eye[2]-Math.cos(y)*cp]};
  }
- const target=[stageX+panX,WORLD_CAMERA.targetHeight+panY+state.observatoryHeight,-1.55];
+ const [dx,dy,dz]=state.atLadder?observatoryCameraOffset(state.observatoryHeight):[0,0,0];
+ const target=[stageX+panX+dx,WORLD_CAMERA.targetHeight+panY+dy,-1.55+dz];
  const cp=Math.cos(p);
  const eye=[target[0]+d*cp*Math.sin(y),target[1]+d*Math.sin(p),target[2]+d*cp*Math.cos(y)];
  return {target,eye};
@@ -54,9 +55,12 @@ export function setTelescopeMagnification(value){
 export function telescopeLookSensitivity(){return Math.tan(telescopeFov()/2)/Math.tan(TELESCOPE_OPTICS.referenceFov*Math.PI/360)}
 
 /** Convert CSS scene pixels (Y down) into the same first-person world camera. */
-export function cssTelescopeView(eye,target,height,units){
+export function cssTelescopeView(eye,target,height,units,layout){
  const perspective=height/(2*Math.tan(telescopeFov()/2));
- const toWorld=M.mul(M.move(0,3.08,0),M.size(1/units,-1/units,1/units));
+ const yUnits=layout?.verticalUnit??units;
+ const ground=layout?.ground??3.08*units;
+ const depth=layout?.depth??0;
+ const toWorld=M.mul(M.move(0,ground/yUnits,-depth/units),M.size(1/units,-1/yUnits,1/units));
  const toCSS=M.mul(M.move(0,height*.09,perspective),M.size(units,-units,units));
  return {perspective,matrix:M.mul(toCSS,M.mul(M.look(eye,target),toWorld))};
 }

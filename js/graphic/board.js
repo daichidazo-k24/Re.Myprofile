@@ -1,6 +1,6 @@
-import {STAGES,STEP} from '../data/stages.js';
+import {STAGE_INDEX,STEP} from '../data/stages.js';
 import {NOTEBOOK_WIDTH,NOTEBOOK_HEIGHT,NOTEBOOK_FACE_Z,NOTEBOOK_LABEL,notebookLabelPixels} from './notebook.js';
-export const GRAPHIC_STAGES=Object.freeze(['projects','quests'].map(id=>STAGES.findIndex(s=>s.id===id)));
+export const GRAPHIC_STAGES=Object.freeze([STAGE_INDEX.projects,STAGE_INDEX.quests]);
 // Lean the notebook against the project-stage pedestal in the gap to Quest Log.
 export const GRAPHIC_BOARD=Object.freeze({x:GRAPHIC_STAGES[0]*STEP+5.5,y:1.35,z:3.35,tilt:-.30,scale:.78,width:NOTEBOOK_WIDTH,height:NOTEBOOK_HEIGHT});
 

@@ -8,6 +8,17 @@
 @media(max-width:800px){.css3d-stage .css-miner{left:540px;top:-72px;width:165px;transform:translateZ(195px)}.css3d-stage .sprite-podium{left:555px;top:183px;width:120px}}
 
 .css3d-frame{pointer-events:auto;cursor:pointer}
+.css3d-frame::after{
+ content:"";position:absolute;inset:-4px;transform:translateZ(-4px);pointer-events:none;
+ border:1px solid #c7e0ff66;
+}
+.css3d-stage .sprite-podium,.css3d-stage .voxel{filter:brightness(.52) saturate(.75)}
+.forest-fruit-glow{
+ position:absolute;left:0;top:0;pointer-events:none;image-rendering:pixelated;
+}
+.island-frost,.island-frost>img{position:absolute;left:0;top:0;pointer-events:none}
+.island-frost{transform-style:preserve-3d}
+.island-frost>img{image-rendering:pixelated}
 
 
 
@@ -26,7 +37,7 @@
  display:flex;align-items:center;justify-content:center;
  transform:translateX(-50%) translateZ(29px) rotateY(-2deg);
  background:rgba(20,33,62,.97);border:4px solid #9bb4dc;
- box-shadow:0 7px 0 #0b1430,0 0 24px rgba(246,141,31,.22);
+ box-shadow:0 7px 0 #0b1430;
  color:#f5f8ff;letter-spacing:2px;font:900 26px/1.2 'Courier New',monospace;
  white-space:nowrap;text-shadow:2px 2px 0 #142241;
  padding:7px 12px;pointer-events:none;backface-visibility:hidden;
@@ -38,6 +49,29 @@ body.is-focus-mode .css3d-stage.is-focus-target .board-popup-title{border-color:
 /* Camera drags must not select the 3D stage titles or underlying world text. */
 .css3d-stage .board-popup-title{user-select:none;-webkit-user-select:none}
 body:not(.is-focus-mode) .css3d-viewport{user-select:none;-webkit-user-select:none}
+
+/* The fallback renders the same solid blocks as WebGL. */
+.stage-landscape,.stage-landscape-cube{
+ position:absolute;left:0;top:0;transform-style:preserve-3d;pointer-events:none;
+}
+.stage-landscape-cube>i{
+ position:absolute;left:0;top:0;backface-visibility:hidden;transform-origin:0 0;
+ width:var(--face-width,var(--cube-width));height:var(--face-height,var(--cube-height));
+ transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg))
+  translateZ(calc(var(--face-depth,var(--cube-depth)) / 2)) translate(-50%,-50%);
+}
+.stage-landscape-lit{background-image:var(--forest-light-atlas);background-repeat:no-repeat;image-rendering:pixelated}
+.stage-landscape-back{--ry:180deg}
+.stage-landscape-left,.stage-landscape-right{
+ --face-width:var(--cube-depth);--face-depth:var(--cube-width);
+}
+.stage-landscape-left{--ry:-90deg}
+.stage-landscape-right{--ry:90deg}
+.stage-landscape-top,.stage-landscape-bottom{
+ --face-height:var(--cube-depth);--face-depth:var(--cube-height);
+}
+.stage-landscape-top{--rx:90deg}
+.stage-landscape-bottom{--rx:-90deg}
 
 /* The camera-aware aurora dome stays behind the CSS3D scene. Devices without
    WebGL use a panoramic image whose viewing window follows the same camera. */
