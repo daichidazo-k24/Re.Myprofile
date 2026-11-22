@@ -7,8 +7,9 @@ import {state} from '../state.js';
 import {STAGE_INDEX} from '../data/stages.js';
 import {onNavigate} from '../ui/navigation.js';
 import {beep} from '../ui/audio.js';
+import {FISHING_CHARACTER} from './scene.js';
 const fishingIndex=STAGE_INDEX.fishing;
-let hotspot=null,dialog=null,gallery=null,castTimer=0,lastAnchor=0;
+let hotspot=null,mobileRig=null,dialog=null,gallery=null,castTimer=0;
 const isFishing=()=>state.entered&&state.active===fishingIndex;
 /** Gallery dialogs are modal: background camera controls must not consume any input. */
 export const isFishingOverlayActive=()=>Boolean(gallery?.isOpen());
@@ -42,16 +43,18 @@ export function castFishingLine(){
  return true;
 }
 /** The renderer sends projected 2D pixels for the 3D line's *hook*, not for the stage board. */
-export function positionFishingHotspot(x,y){
+export function positionFishingHotspot(x,y,{rigX=x,rigY=y,showCharacter=false}={}){
  if(!hotspot)return;
  if(!Number.isFinite(x)||!Number.isFinite(y))return;
- lastAnchor=performance.now();
  const cx=Math.min(innerWidth-108,Math.max(112,x));
  const cy=Math.min(innerHeight-155,Math.max(140,y));
  hotspot.style.left=`${cx}px`;
  hotspot.style.top=`${cy}px`;
- document.documentElement.style.setProperty('--fishing-hook-x',`${cx}px`);
- document.documentElement.style.setProperty('--fishing-hook-y',`${cy}px`);
+ const rigAnchorX=Math.min(innerWidth-108,Math.max(112,rigX));
+ const rigAnchorY=Math.min(innerHeight-155,Math.max(140,rigY));
+ mobileRig.style.setProperty('--fishing-rig-x',`${rigAnchorX}px`);
+ mobileRig.style.setProperty('--fishing-rig-y',`${rigAnchorY}px`);
+ mobileRig.classList.toggle('has-fishing-character',showCharacter);
 }
 export function installFishingUI(){
  makeGallery();
@@ -59,8 +62,11 @@ export function installFishingUI(){
  hotspot.innerHTML='<span class="fish-reticle" aria-hidden="true">✦</span><span class="fish-hotspot-text">🎣 釣り糸をクリック</span><small>CLICK TO REEL UP THE GALLERY</small>';
  hotspot.style.left='64%';hotspot.style.top='49%';hotspot.hidden=true;hotspot.addEventListener('click',castFishingLine);
  document.body.append(hotspot);
- const mobileRig=document.createElement('div');mobileRig.className='fishing-mobile-rig';mobileRig.setAttribute('aria-hidden','true');
- mobileRig.innerHTML=`<svg viewBox="0 0 260 230" width="260" height="230" xmlns="http://www.w3.org/2000/svg"><path d="M10 222 L118 118 L198 16" stroke="#091329" stroke-width="15" stroke-linejoin="miter" fill="none"/><path d="M10 222 L118 118 L198 16" stroke="#ffc778" stroke-width="9" stroke-linejoin="miter" fill="none"/><path d="M10 222 L118 118 L198 16" stroke="#dc9550" stroke-width="3" stroke-linejoin="miter" fill="none"/><rect x="190" y="8" width="16" height="16" fill="#f5a334" stroke="#ffd484" stroke-width="3"/><path class="mobile-rig-line" d="M198 16 V208" stroke="#c2e5ff" stroke-width="3" fill="none"/><circle cx="198" cy="208" r="8" fill="#ffad41" stroke="#fff3bb" stroke-width="3"/></svg>`;
+ mobileRig=document.createElement('div');mobileRig.className='fishing-mobile-rig';mobileRig.setAttribute('aria-hidden','true');
+ const {crop,gripX,gripY}=FISHING_CHARACTER;
+ const characterHeight=123,characterWidth=characterHeight*crop[2]/crop[3];
+ const characterSrc=new URL('../../assets/fishing.png',import.meta.url).href;
+ mobileRig.innerHTML=`<svg viewBox="0 0 260 230" width="260" height="230" xmlns="http://www.w3.org/2000/svg"><svg class="fishing-rig-character" x="${10-gripX*characterWidth}" y="${222-gripY*characterHeight}" width="${characterWidth}" height="${characterHeight}" viewBox="${crop.join(' ')}"><image href="${characterSrc}" width="1280" height="1280"/></svg><path d="M10 222 L118 118 L198 16" stroke="#091329" stroke-width="15" stroke-linejoin="miter" fill="none"/><path d="M10 222 L118 118 L198 16" stroke="#ffc778" stroke-width="9" stroke-linejoin="miter" fill="none"/><path d="M10 222 L118 118 L198 16" stroke="#dc9550" stroke-width="3" stroke-linejoin="miter" fill="none"/><rect x="190" y="8" width="16" height="16" fill="#f5a334" stroke="#ffd484" stroke-width="3"/><path class="mobile-rig-line" d="M198 16 V208" stroke="#c2e5ff" stroke-width="3" fill="none"/><circle cx="198" cy="208" r="8" fill="#ffad41" stroke="#fff3bb" stroke-width="3"/></svg>`;
  document.body.append(mobileRig);
  onNavigate((kind)=>{if(kind==='stage'||kind==='focus'){
   if(!isFishing()){clearTimeout(castTimer);document.body.classList.remove('fishing-reeling');if(dialog.open)closeGallery();resetCast()}

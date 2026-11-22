@@ -9,6 +9,26 @@ body.is-focus-mode .screen-grain{opacity:.12}
 body.is-focus-mode .vignette{background:radial-gradient(ellipse at 50% 40%,transparent 22%,rgba(1,4,14,.66) 100%)}
 body.is-focus-mode .notification{opacity:0!important}
 .chapter-dock::before{content:"STAGE SELECT";position:absolute;left:14px;top:-20px;color:#ffd079;font:900 10px "Courier New",monospace;letter-spacing:2px;text-shadow:2px 2px 0 #0c1428;opacity:.92}
+.stage-guide{
+ --stage-guide-top:clamp(66px,13vh,140px);
+ --stage-guide-available:calc(100dvh - var(--stage-guide-top) - 82px);
+ display:none;position:fixed;z-index:11;left:clamp(16px,1.5vw,30px);top:var(--stage-guide-top);
+ width:clamp(270px,23vw,460px);min-height:min(70vh,700px,var(--stage-guide-available));max-height:var(--stage-guide-available);
+ padding:clamp(20px,2.2vw,42px);border:2px solid #f5f3e9;box-shadow:0 0 0 4px #080808;
+ background:#080808;color:#f5f3e9;font:700 clamp(16px,1.12vw,21px)/1.8 "MS Gothic",monospace;
+ flex-direction:column;gap:1em;overflow-y:auto;overscroll-behavior:contain;
+}
+.stage-guide p{margin:0}
+.stage-guide-signature{text-align:right}
+.stage-guide-details{display:grid;gap:1em;margin-top:auto;font-size:clamp(13px,.9vw,17px);line-height:1.55}
+.stage-guide-details h2{margin:0 0 .25em;font:inherit}
+.stage-guide-details ul{list-style:none;margin:0;padding:0}
+.stage-guide-details li{padding-left:1em;text-indent:-1em}
+.stage-guide-details li+li{margin-top:.25em}
+body.world-entered .stage-guide.is-visible{display:flex}
+body:is(.is-focus-mode,.is-observing) .stage-guide{visibility:hidden}
+.stage-guide-letter.is-pending{opacity:0}
+@media(max-width:800px){.stage-guide{width:min(78vw,290px);min-height:min(57vh,370px,var(--stage-guide-available));padding:16px;line-height:1.65;gap:.7em}}
 
 body.is-focus-mode .css3d-stage{opacity:.22;filter:blur(1.5px) saturate(.75);transition:transform .45s ease,opacity .35s ease,filter .35s ease}
 body.is-focus-mode .css3d-stage.is-focus-target{opacity:1;filter:none;z-index:3}

@@ -18,7 +18,7 @@ test('the board is one physical HTML-textured WebGL quad: depth is natural and n
  assert.match(native,/canvas\.updateElementGeometry/);
  assert.doesNotMatch(world,/createForegroundOcclusion|occlusion\.render|liveBoards\.project/);
  assert.doesNotMatch(world,/draw\(terrainMesh[\s\S]*draw\(terrainMesh/);
- const pose=minerPose(2,1.3),matrix=minerModel(2,1.3);
+ const pose=minerPose(2),matrix=minerModel(2);
  assert.equal(matrix[12],Math.fround(pose.x));
  assert.equal(matrix[13],Math.fround(pose.y));
  assert.equal(matrix[14],Math.fround(pose.z));

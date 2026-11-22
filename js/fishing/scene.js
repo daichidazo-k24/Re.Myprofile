@@ -11,6 +11,14 @@ export const ROD_POINTS=[
 ];
 const fishingX=STAGE_INDEX.fishing*STEP;
 export const FISH_WORLD={x:fishingX,hookX:fishingX+ROD_POINTS.at(-1)[0],hookY:1.0,hookZ:ROD_POINTS.at(-1)[2],rodTipY:ROD_POINTS.at(-1)[1]};
+// Grip position measured within the cropped sprite, from its top-left corner.
+const gripX=.907,gripY=.618,width=2.05,height=2.61;
+const [handleX,handleY,handleZ]=ROD_POINTS[0];
+export const FISHING_CHARACTER={
+ crop:[368,304,560,712],gripX,gripY,width,height,
+ x:fishingX+handleX-(gripX-.5)*width,
+ y:handleY+(gripY-.5)*height,z:handleZ+.03,
+};
 // A box has its length along local Y; rotate around Z so it reaches endpoint B.
 export function segmentGeometry(a,b){
  const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2];

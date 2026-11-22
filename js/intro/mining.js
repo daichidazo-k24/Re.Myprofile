@@ -4,7 +4,7 @@ import {state} from '../state.js';
 import {beep} from '../ui/audio.js';
 import {selectStage,setFocus} from '../ui/navigation.js';
 import {advanceMiningStar,STAR_COLORS} from '../scene/sky-model.js';
-export function createMiningIntro(){
+export function createMiningIntro(onEnter=()=>{}){
  const $=id=>document.getElementById(id),canvas=$('rockCanvas'),ctx=canvas.getContext('2d',{alpha:true});
  const miner=new Image();miner.src=new URL('../../assets/miner.png',import.meta.url).href;
  let tiles=[],debris=[],introStart=0,introRAF=0,active=false,lastStrike=0;
@@ -49,7 +49,7 @@ export function createMiningIntro(){
  function finish(){active=false;bridge.active=false;cancelAnimationFrame(introRAF);
   // The existing .6 s screen fade blends matching 2D/3D stars, including when skipped.
   if(introElapsed<introDuration){ctx.clearRect(0,0,innerWidth,innerHeight);paintStars(1600)}
-  state.entered=true;document.body.classList.add('world-entered');$('introScreen').classList.add('is-done');$('miningFill').style.width='100%';$('miningPercent').textContent='100%';const notice=$('notification');notice.classList.add('visible');setTimeout(()=>notice.classList.remove('visible'),2300);beep(580,.15)}
+  state.entered=true;document.body.classList.add('world-entered');$('introScreen').classList.add('is-done');$('miningFill').style.width='100%';$('miningPercent').textContent='100%';const notice=$('notification');notice.classList.add('visible');setTimeout(()=>notice.classList.remove('visible'),2300);onEnter();beep(580,.15)}
  function replay(){setFocus(false);state.entered=false;document.body.classList.remove('world-entered');state.focused=false;state.focusMix=0;active=false;cancelAnimationFrame(introRAF);debris=[];starDebris=[];bridge.count=0;bridge.targetCount=0;bridge.indices.fill(-1);bridge.active=true;lastFrame=0;introElapsed=0;nextStarAt=0;$('introScreen').classList.remove('is-done');$('introCenter').style.opacity='1';selectStage(0);resize();if(state.reduceMotion){finish();return}active=true;introStart=performance.now()+250;introRAF=requestAnimationFrame(frame)}
  window.addEventListener('resize',()=>{if(active){const p=(performance.now()-introStart)/introDuration;resize();if(p>.2)tiles.forEach(t=>{t.alive=t.rank>p})}});
  return {start(){if(state.reduceMotion)finish();else replay()},finish,replay};

@@ -1,6 +1,6 @@
 import {state} from '../state.js';
 import {OBSERVATORY,approachLadder,climbLadder,descendLadder,useTelescope,stopViewing} from '../scene/observatory.js';
-import {STAIR_HOTSPOT,TELESCOPE_POSITION} from '../scene/observatory-layout.js';
+import {STAIR_ARRIVAL_DISTANCE,STAIR_HOTSPOT,TELESCOPE_POSITION} from '../scene/observatory-layout.js';
 import {setTelescopeMagnification,telescopeMagnification} from './orbit-camera.js';
 
 let panel,ladderButton,telescopeButton,zoomControl,zoomSlider,lastStatus='',lastUIKey='';
@@ -27,7 +27,7 @@ export function installObservatoryUI(){
 export function syncObservatoryUI(){
  if(!panel)return;
  const phase=state.observatoryPhase;
- const arrived=Math.abs(state.cameraX-OBSERVATORY.x)<.3;
+ const arrived=Math.abs(state.cameraX-OBSERVATORY.x)<STAIR_ARRIVAL_DISTANCE;
  const key=[phase,state.entered,state.focused,state.atLadder,state.cameraUnlocked,arrived,state.telescopeFovDegrees].join(':');
  if(key===lastUIKey)return;lastUIKey=key;
  panel.hidden=!state.entered||state.focused||!state.atLadder;

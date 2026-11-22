@@ -1,6 +1,6 @@
 import {state} from '../state.js';
 import {resetWorldCamera} from '../ui/orbit-camera.js';
-import {OBSERVATORY,buildRooftopTelescope,observatoryClimberPose} from './observatory-layout.js';
+import {OBSERVATORY,STAIR_ARRIVAL_DISTANCE,buildRooftopTelescope,observatoryClimberPose} from './observatory-layout.js';
 export {OBSERVATORY} from './observatory-layout.js';
 
 export function approachLadder(){
@@ -8,7 +8,7 @@ export function approachLadder(){
  state.atLadder=true;state.aim=OBSERVATORY.x;return true;
 }
 export function climbLadder(){
- if(!state.entered||state.focused||!state.atLadder||state.observatoryPhase!=='ground'||Math.abs(state.cameraX-OBSERVATORY.x)>.3)return false;
+ if(!state.entered||state.focused||!state.atLadder||state.observatoryPhase!=='ground'||Math.abs(state.cameraX-OBSERVATORY.x)>=STAIR_ARRIVAL_DISTANCE)return false;
  state.observatoryPhase='climbing';return true;
 }
 export function descendLadder(){
@@ -38,13 +38,13 @@ export function updateObservatory(dt){
 }
 
 /** The fixed stair, ladder and roof deck are part of the island mesh. */
-export function drawObservatory({box,quad},minerTex,climbTextures=[],time=0){
+export function drawObservatory({box,quad},{minerTex,uprightTex,climbTextures,walk},time){
  if(state.observatoryPhase==='viewing')return;
  buildRooftopTelescope(box);
- if(state.atLadder){
-  const {x,y,z,onLadder}=observatoryClimberPose(state.observatoryHeight);
+ if(state.atLadder&&!walk){
+  const {x,y,z,onStairs,onLadder}=observatoryClimberPose(state.observatoryHeight);
   const frame=Math.floor(time*7)%2;
-  const texture=onLadder?(climbTextures[frame]||minerTex):minerTex;
-  if(texture)quad(x,y+.85,z,1.9,1.65,'#ffffff',texture);
+  const texture=(onLadder?climbTextures[frame]:onStairs?uprightTex:minerTex)||minerTex;
+  if(texture)quad(x,y+OBSERVATORY.actorCenter,z,OBSERVATORY.actorWidth,OBSERVATORY.actorHeight,'#ffffff',texture);
  }
 }

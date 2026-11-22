@@ -3,10 +3,10 @@ import {M,seeded,hex,makeCube,makePlane} from './math.js';
 import {STAGES,STEP} from '../data/stages.js';
 import {boardProgress} from '../ui/board-scroll.js';
 import {createNativeBoardTextures,isNativeHTMLCanvasAvailable} from './native-html-textures.js';
-import {drawFishingWorld,FISH_WORLD} from '../fishing/scene.js';
+import {drawFishingWorld,FISHING_CHARACTER,FISH_WORLD} from '../fishing/scene.js';
 import {fishingState} from '../fishing/state.js';
 import {positionFishingHotspot} from '../fishing/ui.js';
-import {loadMinerWalkFrames,minerModel,minerWalkModel,minerWalkPose} from './miner-pose.js';
+import {STAIR_BUBBLE,createMinerArrival,loadMinerSprites,minerModel,minerQuestionModel,minerWalkModel,minerWalkPose} from './miner-pose.js';
 import {worldCameraPose,telescopeFov} from '../ui/orbit-camera.js';
 import {createSkyRenderer} from './sky.js';
 import {createSkyBackground} from './sky-background.js';
@@ -32,7 +32,8 @@ export function startWebGL(state,onPageChange){
  let program,cubeMesh,planeMesh,terrainMesh,loc={},whiteTex,minerTex,climbTextures=[null,null],titleTextures=[],htmlBoards=null;
  let lastTs=0,introZoom=30,running=true,sky=null,background=null,planetarium=null,graphicTex=null,graphicMesh=null;
  let fruitGlowTex,frostTex,frostMesh,treeTex,treeMesh,frostTime=0;
- const walkTextures=[];
+ const minerSprites={};
+ const minerArrival=createMinerArrival();
  const spritePlane=makePlane();
  const frostData=new Float32Array(frostFlakes.length*spritePlane.length),frostPosition=new Float32Array(4);
  const propShadows=new Map();
@@ -76,10 +77,10 @@ export function startWebGL(state,onPageChange){
   graphicMesh=mesh(createNotebookMesh());
   const miner=new Image();miner.onload=()=>{try{minerTex=texFromCanvas(miner)}catch(error){console.warn('Miner texture:',error)}};
   miner.src=new URL('../../assets/miner.png',import.meta.url).href;
-  loadMinerWalkFrames((canvas,index)=>{
+  loadMinerSprites((canvas,name)=>{
    if(!running)return;
-   try{walkTextures[index]=texFromCanvas(canvas,gl.NEAREST)}
-   catch(error){console.warn('Walking sprite:',error)}
+   try{minerSprites[name]=texFromCanvas(canvas,gl.NEAREST)}
+   catch(error){console.warn('Stage sprite:',error)}
   });
   ['sub1.png','sub2.png'].forEach((name,index)=>{
    const image=new Image();
@@ -225,7 +226,9 @@ function board(i,t){const x=i*STEP,hover=Math.sin(t*1.4+i*.65)*.055,rot=.03*Math
  // thick wall console leg, floating ledge
  box(x, .17,z-.85,2.7,1.0,1.5,'#202e52');box(x,.76,z+.18,7.8,.2,.8,'#1a315a');box(x, .88,z+.42,2.7,.19,.28,'#f68d1f');
 }
-function drawVoxelMiner(i,t,walk){const box=sceneryBox,x=i*STEP-5.75;box(x,.30,2.3,2.35,.6,2.3,'#2b3962');box(x,.66,2.3,1.95,.18,1.95,'#6f85b3');box(x, .84,2.3,1.18,.18,1.2,'#e68b29');if(minerTex&&!walk)draw(planeMesh,minerModel(i,t),'#ffffff',minerTex,1,0)
+function drawVoxelMiner(i,t,walk){const box=sceneryBox,x=i*STEP-5.75;box(x,.30,2.3,2.35,.6,2.3,'#2b3962');box(x,.66,2.3,1.95,.18,1.95,'#6f85b3');box(x, .84,2.3,1.18,.18,1.2,'#e68b29');
+ const standing=state.entered&&minerSprites.upright||minerTex;
+ if(standing&&!walk)draw(planeMesh,minerModel(i),'#ffffff',standing,1,0);
  for(let j=0;j<5;j++){const zz=-3.5+j*1.5;box(x-1.5+.3*Math.sin(t+j),1.25+seeded(j,i),zz,.35,.35,.35,j%2?'#f6ac45':'#81a8ef',t*(.3+j*.1))}}
 function drawStageProps(i,t,walk){const box=sceneryBox,x=i*STEP,fx=x+5.5,stage=STAGES[i];
  if(i===state.active&&!state.atLadder)drawVoxelMiner(i,t,walk);
@@ -279,16 +282,32 @@ function drawStageProps(i,t,walk){const box=sceneryBox,x=i*STEP,fx=x+5.5,stage=S
   }
   draw(terrainMesh,M.id(),'#ffffff',whiteTex,1);
   draw(treeMesh,M.id(),'#ffffff',treeTex,1);
-  drawObservatory({box:sceneryBox,quad},minerTex,climbTextures,t);
+  const walk=minerSprites.walk1&&minerSprites.walk2&&minerWalkPose(state,t);
+  drawObservatory({box:sceneryBox,quad},{minerTex,uprightTex:minerSprites.upright,climbTextures,walk},t);
   positionObservatoryHotspots(pos=>{
    const w=vWorld[3]*pos[0]+vWorld[7]*pos[1]+vWorld[11]*pos[2]+vWorld[15];
    if(w<=.05)return null;
    return {x:((vWorld[0]*pos[0]+vWorld[4]*pos[1]+vWorld[8]*pos[2]+vWorld[12])/w+1)*innerWidth/2,
     y:(1-(vWorld[1]*pos[0]+vWorld[5]*pos[1]+vWorld[9]*pos[2]+vWorld[13])/w)*innerHeight/2};
   });
-  const walk=walkTextures[0]&&walkTextures[1]&&minerWalkPose(state,t);
   for(let i=0;i<STAGES.length;i++){if(Math.abs(i*STEP-cameraX)>28)continue;if(STAGES[i].id==='fishing'){drawFishingWorld({box},t)}else{board(i,t);drawStageProps(i,t,walk)}}
-  if(walk)draw(planeMesh,minerWalkModel(walk),'#ffffff',walkTextures[walk.frame],1,0);
+  if(walk)draw(planeMesh,minerWalkModel(walk),'#ffffff',minerSprites[walk.sprite],1,0);
+  const atFishing=state.entered&&STAGES[state.active].id==='fishing';
+  if(atFishing&&!walk&&innerWidth>650&&minerSprites.fishing){
+   const {x,y,z,width,height}=FISHING_CHARACTER;
+   quad(x,y,z,width,height,'#ffffff',minerSprites.fishing);
+  }
+  if(minerSprites.upright){
+   const scale=minerArrival(state,t);
+   if(scale&&!state.focused){
+    if(state.atLadder&&minerSprites.curiosity){
+     const {x,y,z,width,height}=STAIR_BUBBLE;
+     quad(x,y,z,width*scale,height*scale,'#ffffff',minerSprites.curiosity);
+    }else if(!state.atLadder&&minerSprites.question){
+     draw(planeMesh,minerQuestionModel(state.active,scale),'#ffffff',minerSprites.question,1,0);
+    }
+   }
+  }
   const g=GRAPHIC_BOARD;
   if(Math.abs(g.x-cameraX)<28){
    draw(graphicMesh,graphicModel,'#ffffff',whiteTex,.65,0);
@@ -307,13 +326,19 @@ function drawStageProps(i,t,walk){const box=sceneryBox,x=i*STEP,fx=x+5.5,stage=S
    htmlBoards.syncGeometry(i,model,vWorld);
   }
   // The hardware depth test establishes front/back in the shared scene.
-  if(state.entered&&STAGES[state.active].id==='fishing'){
+  if(atFishing){
    const p=fishingState.phase==='reeling'?Math.min(1,(performance.now()-fishingState.castingAt)/1220):0;
-   const pos=[FISH_WORLD.hookX,FISH_WORLD.hookY+Math.sin(t*2.8)*.14+3.6*p,FISH_WORLD.hookZ];
-   const w=vWorld[3]*pos[0]+vWorld[7]*pos[1]+vWorld[11]*pos[2]+vWorld[15];
-   if(w>.05){const px=(vWorld[0]*pos[0]+vWorld[4]*pos[1]+vWorld[8]*pos[2]+vWorld[12])/w;
-    const py=(vWorld[1]*pos[0]+vWorld[5]*pos[1]+vWorld[9]*pos[2]+vWorld[13])/w;
-    positionFishingHotspot((px+1)*innerWidth/2,(1-py)*innerHeight/2+40);}
+   const projectHook=y=>{
+    const {hookX:x,hookZ:z}=FISH_WORLD;
+    const w=vWorld[3]*x+vWorld[7]*y+vWorld[11]*z+vWorld[15];
+    if(w<=.05)return null;
+    const px=(vWorld[0]*x+vWorld[4]*y+vWorld[8]*z+vWorld[12])/w;
+    const py=(vWorld[1]*x+vWorld[5]*y+vWorld[9]*z+vWorld[13])/w;
+    return {x:(px+1)*innerWidth/2,y:(1-py)*innerHeight/2+40};
+   };
+   const hook=projectHook(FISH_WORLD.hookY+Math.sin(t*2.8)*.14+3.6*p);
+   const rig=projectHook(FISH_WORLD.hookY);
+   if(hook&&rig)positionFishingHotspot(hook.x,hook.y,{rigX:rig.x,rigY:rig.y,showCharacter:!walk});
   }
   requestAnimationFrame(frame)
  }
@@ -327,7 +352,7 @@ function drawStageProps(i,t,walk){const box=sceneryBox,x=i*STEP,fx=x+5.5,stage=S
   document.body.classList.add('native-html-canvas');
   requestAnimationFrame(frame);
   return {type:'webgl',htmlInCanvas:true,depthOcclusion:false,stats:htmlBoards.stats,boards:htmlBoards.roots,
-   destroy(){running=false;sky?.destroy();background?.destroy();planetarium?.destroy();destroyForestEffects();walkTextures.forEach(texture=>gl.deleteTexture(texture));if(graphicTex)gl.deleteTexture(graphicTex);if(graphicMesh)gl.deleteBuffer(graphicMesh.buffer);htmlBoards?.destroy();document.body.classList.remove('native-html-canvas')}};
+   destroy(){running=false;sky?.destroy();background?.destroy();planetarium?.destroy();destroyForestEffects();Object.values(minerSprites).forEach(texture=>gl.deleteTexture(texture));if(graphicTex)gl.deleteTexture(graphicTex);if(graphicMesh)gl.deleteBuffer(graphicMesh.buffer);htmlBoards?.destroy();document.body.classList.remove('native-html-canvas')}};
  }catch(error){
   running=false;
   console.error('Native HTML-in-Canvas fallback:',error);

@@ -4,7 +4,9 @@ export const OBSERVATORY=Object.freeze({
  x:(STAGE_INDEX.quests+STAGE_INDEX.badges)*STEP/2,
  z:-3.85, height:13.35, leftStage:STAGE_INDEX.quests, rightStage:STAGE_INDEX.badges,
  stairZ:1.85, stairTop:2.35, ladderX:badgesX-5.85,
+ actorCenter:.85,actorWidth:1.9,actorHeight:1.65,
 });
+export const STAIR_ARRIVAL_DISTANCE=.3;
 const {x,z,height,stairZ,stairTop,ladderX}=OBSERVATORY;
 const deckArrival=height-1.05;
 const roofX=ladderX+1.58;
@@ -16,7 +18,7 @@ const mix=(a,b,t)=>a+(b-a)*t;
 export function observatoryClimberPose(progress){
  if(progress<stairTop){
   const t=progress/stairTop;
-  return {x:mix(x,ladderX,t),y:progress,z:mix(stairZ,z+.36,t),onLadder:false};
+  return {x:mix(x,ladderX,t),y:progress,z:mix(stairZ,z+.36,t),onStairs:true,onLadder:false};
  }
  if(progress<deckArrival){
   const t=(progress-stairTop)/(deckArrival-stairTop);

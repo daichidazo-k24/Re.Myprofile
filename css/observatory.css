@@ -27,9 +27,10 @@ body.is-telescope-view .vignette{opacity:0}
 body.is-observing .observatory-panel{bottom:max(18px,env(safe-area-inset-bottom))}
 body.is-observing .chapter-dock,body.is-telescope-view .top-hud,body.is-telescope-view .bottom-hud,body.is-telescope-view .camera-controls-root,body.is-telescope-view .side-action,body.is-telescope-view .notification{opacity:0;visibility:hidden;pointer-events:none}
 body.is-telescope-view .css3d-frame{pointer-events:none}
-body.is-at-ladder .css3d-stage .css-miner{display:none}
+body.is-at-ladder .css3d-stage[data-stage] .css-miner{display:none}
 .css3d-stage[data-stage='quests'] .block-stack{display:none}
 body.is-observing .side-action{visibility:hidden;pointer-events:none}
-.observatory-anchor,.observatory-miner{position:absolute;left:0;top:0;pointer-events:none}
+.observatory-anchor,.observatory-miner,.observatory-curiosity{position:absolute;left:0;top:0;pointer-events:none}
+.observatory-curiosity{image-rendering:pixelated}
 .observatory-miner{width:114px;image-rendering:pixelated}
 @media(prefers-reduced-motion:reduce){.observatory-panel button,.telescope-hotspot span{transition:none}}

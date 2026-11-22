@@ -56,8 +56,12 @@ body.on-fishing-stage .chapter:last-child{border-color:#f2ad3f;color:#ffcf8c}
 @keyframes fish-pull{to{transform:translateZ(60px) translateY(-165px)}}
 @keyframes fish-line-pull{to{height:55px}}
 .fishing-css-stage .fish-line{top:205px;height:86px}
-.fishing-mobile-rig{display:none;position:fixed;z-index:5;pointer-events:none;left:calc(var(--fishing-hook-x,210px) - 198px);top:calc(var(--fishing-hook-y,350px) - 208px);width:260px;height:230px;filter:drop-shadow(4px 5px #091329)}
+.fishing-mobile-rig{display:none;position:fixed;z-index:5;pointer-events:none;left:calc(var(--fishing-rig-x,210px) - 198px);top:calc(var(--fishing-rig-y,350px) - 208px);width:260px;height:230px;filter:drop-shadow(4px 5px #091329)}
+.fishing-mobile-rig>svg{overflow:visible}
+.fishing-rig-character{overflow:hidden;image-rendering:pixelated}
+.fishing-mobile-rig:not(.has-fishing-character) .fishing-rig-character{display:none}
 @media(max-width:650px){body.on-fishing-stage .fishing-mobile-rig{display:block}}
+@media(max-width:420px){.fishing-mobile-rig{transform:scale(.68);transform-origin:198px 208px}}
 body.fishing-reeling .fishing-mobile-rig .mobile-rig-line{stroke-dasharray:15 9;animation:fish-reel-line 300ms linear infinite}
 @keyframes fish-reel-line{to{stroke-dashoffset:24}}
 @media(prefers-reduced-motion:reduce){body.fishing-reeling .fishing-mobile-rig .mobile-rig-line{animation:none}}

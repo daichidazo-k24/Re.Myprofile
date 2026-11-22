@@ -88,7 +88,7 @@ export function bindControls(intro){
 
  const pointers=new Map();
  let gestureMoved=false,justDraggedUntil=0,pinchDistance=null;
- const ignoreTarget=target=>target instanceof Element&&!!target.closest('.top-hud,.bottom-hud,.chapter-dock,.camera-controls-root,.side-action,.fishing-ui,.fishing-gallery,.intro-screen,button,a,input,textarea,select,dialog');
+ const ignoreTarget=target=>target instanceof Element&&!!target.closest('.top-hud,.bottom-hud,.chapter-dock,.stage-guide,.camera-controls-root,.side-action,.fishing-ui,.fishing-gallery,.intro-screen,button,a,input,textarea,select,dialog');
  const distance=()=>{
   if(pointers.size<2)return null;
   const [a,b]=[...pointers.values()];return Math.hypot(a.x-b.x,a.y-b.y);
@@ -135,7 +135,7 @@ export function bindControls(intro){
  window.addEventListener('wheel',event=>{
   if(isGalleryOverlayActive()||!state.entered)return;
   const node=event.target instanceof Element?event.target:null;
-  if(node?.closest('.chapter-dock,.bottom-hud,.top-hud,.camera-controls-root,.fishing-gallery,.fishing-ui'))return;
+  if(node?.closest('.chapter-dock,.stage-guide,.bottom-hud,.top-hud,.camera-controls-root,.fishing-gallery,.fishing-ui'))return;
   // Focus mode scrolls the document; do not steal native wheel or link events.
   if(state.focused){
    if(node?.closest('.board-scroll-area')&&!node.closest('.hic-board-viewport'))return;

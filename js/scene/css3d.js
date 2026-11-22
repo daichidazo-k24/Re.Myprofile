@@ -12,7 +12,7 @@ import {createSkyBackdrop} from './sky-backdrop.js';
 import {createSkyCamera,updateCSSSkyCamera,updateSkyCamera} from './sky-camera.js';
 import {skyDomeDirection} from './sky-dome.js';
 import {updateObservatory} from './observatory.js';
-import {STAIR_HOTSPOT,TELESCOPE_POSITION,buildRooftopTelescope,observatoryCameraOffset,observatoryClimberPose} from './observatory-layout.js';
+import {OBSERVATORY,STAIR_HOTSPOT,TELESCOPE_POSITION,buildRooftopTelescope,observatoryCameraOffset,observatoryClimberPose} from './observatory-layout.js';
 import {syncObservatoryUI,positionObservatoryHotspots} from '../ui/observatory.js';
 import {worldCameraPose,telescopeFov,cssTelescopeView} from '../ui/orbit-camera.js';
 import {WORLD_CAMERA} from './camera-settings.js';
@@ -20,7 +20,7 @@ import {TREEHOUSE_TOP,buildIslandLandscape,islandTreePlanes} from './island-land
 import {createIslandTreeAtlas} from './island-trees.js';
 import {FRUIT_GLOW,collectFruitShadows,createFruitGlow,fruitLights,islandFaceLight,rasterIslandFace} from './island-lighting.js';
 import {createFrostSprite,frostFlakes,frostPose,showIslandFrost} from './island-frost.js';
-import {loadMinerWalkFrames,minerWalkPose} from './miner-pose.js';
+import {STAIR_BUBBLE,createMinerArrival,loadMinerSprites,minerWalkPose} from './miner-pose.js';
 import {hex} from './math.js';
 
 const CSS_SCALE=.674;
@@ -29,6 +29,7 @@ const CSS_WORLD_UNITS=CSS_STAGE_STEP/STEP;
 const CSS_ISLAND_DEPTH=79;
 const CSS_ISLAND_GROUND=193;
 const CSS_ISLAND_VERTICAL_UNIT=72;
+const CSS_MINER_DEPTH=195;
 const BADGES_X=STAGE_INDEX.badges*STEP;
 const BADGES_VIEW_SPAN=(TREEHOUSE_TOP+3.56)*CSS_ISLAND_VERTICAL_UNIT;
 const BADGES_VIEW_CENTER=CSS_ISLAND_GROUND-(TREEHOUSE_TOP-3.56)*CSS_ISLAND_VERTICAL_UNIT/2;
@@ -174,7 +175,7 @@ export function startCSS3D(){
  const skyDirection=new Float32Array(3),skyRay=new Float32Array(3);
  if(backdrop)viewport.classList.add('has-sky-backdrop');
  const world=document.createElement('div');world.className='css3d-world';viewport.appendChild(world);
- const stages=[],observers=[];
+ const stages=[],stageMiners=[],observers=[];
  STAGES.forEach((meta,i)=>{
   const stage=document.createElement('div');stage.className='css3d-stage'+(i===state.active?' is-miner-active':'');
   stage.dataset.stage=meta.id;
@@ -190,7 +191,8 @@ export function startCSS3D(){
 </svg><div class="fish-anchor"></div><div class="fish-pixel-stars"></div><div class="fishing-island-marker">EDGE OF THE ISLAND / FISHING SPOT</div></div>`;
    world.appendChild(stage);stages.push(stage);return;
   }
-  stage.innerHTML=`<div class="css3d-back"></div><div class="board-popup-title" aria-hidden="true">${meta.boardHeading}</div><div class="css3d-frame"><span class="corner-led"></span><div class="card-cut board-scroll-area" tabindex="0" role="region" aria-label="${meta.short} の連続スクロール資料"><div class="board-scroll-sized"><div class="board-scroll-sheet">${renderStageDocument(i)}</div></div></div><span class="monitor-scroll-track" aria-hidden="true"><span></span></span></div><div class="sprite-podium"></div><img class="css-miner" src="${new URL('../../assets/miner.png',import.meta.url).href}" alt="">`;
+  stage.innerHTML=`<div class="css3d-back"></div><div class="board-popup-title" aria-hidden="true">${meta.boardHeading}</div><div class="css3d-frame"><span class="corner-led"></span><div class="card-cut board-scroll-area" tabindex="0" role="region" aria-label="${meta.short} の連続スクロール資料"><div class="board-scroll-sized"><div class="board-scroll-sheet">${renderStageDocument(i)}</div></div></div><span class="monitor-scroll-track" aria-hidden="true"><span></span></span></div><div class="sprite-podium"></div><div class="css-miner"><img class="css-miner-sprite" src="${new URL('../../assets/miner.png',import.meta.url).href}" alt=""></div>`;
+  stageMiners[i]=stage.querySelector('.css-miner');
   if(meta.id==='profile'){
    stage.insertAdjacentHTML('beforeend',`<div class="block-stack">${Array.from({length:6},(_,j)=>`<div class="voxel" style="--d:${(j%3)*22}px;--delay:${j*.2}s"></div>`).join('')}</div>`);
   }
@@ -282,43 +284,89 @@ export function startCSS3D(){
  walker.hidden=true;
  walker.setAttribute('aria-hidden','true');
  world.appendChild(walker);
- const walkFrames=[];
- let walkFrame=-1;
- loadMinerWalkFrames((canvas,index)=>{
-  if(!running)return;
+ const walkFrames={};
+ const minerArrival=createMinerArrival();
+ let walkFrame=null,question=null,curiosity=null,uprightSrc=null;
+ loadMinerSprites((canvas,name)=>{
+  if(!running||name==='fishing')return;
+  if(name==='upright'){
+   uprightSrc=canvas.toDataURL();
+   for(const miner of stageMiners)miner.firstElementChild.src=uprightSrc;
+   return;
+  }
+  if(name==='question'){
+   question=canvas;
+   question.className='css-miner-question';
+   question.setAttribute('aria-hidden','true');
+   question.hidden=true;
+   return;
+  }
+  if(name==='curiosity'){
+   curiosity=canvas;
+   curiosity.className='observatory-curiosity';
+   curiosity.setAttribute('aria-hidden','true');
+   curiosity.hidden=true;
+   curiosity.style.width=`${STAIR_BUBBLE.width*CSS_WORLD_UNITS}px`;
+   world.appendChild(curiosity);
+   return;
+  }
   canvas.className='css-miner';
   canvas.hidden=true;
-  walkFrames[index]=canvas;
+  walkFrames[name]=canvas;
   walker.appendChild(canvas);
  });
  function cssFrame(now){
   if(!running)return;
   const dt=lastFrame?(now-lastFrame)/1000:0;lastFrame=now;
   updateObservatory(dt);syncObservatoryUI();
-  const actor=observatoryClimberPose(state.observatoryHeight);
-  const climbSprite=actor.onLadder?'sub'+(Math.floor(now/150)%2+1)+'.png':'miner.png';
-  if(climber.dataset.pose!==climbSprite){
-   climber.src=new URL('../../assets/'+climbSprite,import.meta.url).href;climber.dataset.pose=climbSprite;
-  }
-  climber.hidden=!state.atLadder||state.observatoryPhase==='viewing';
-  telescope.hidden=state.observatoryPhase==='viewing';
-  climber.style.transform=islandTransform(actor.x,actor.y,actor.z)+' translate(-50%,-100%)';
   const baseScale=Math.max(.30,Math.min(1.05,innerWidth/(innerWidth<680?1110:1330)));
   state.cameraX+=(state.aim-state.cameraX)*(state.reduceMotion?1:.07);
-  const walk=walkFrames[0]&&walkFrames[1]&&minerWalkPose(state,now/1000);
+  const time=now/1000;
+  const walk=walkFrames.walk1&&walkFrames.walk2&&minerWalkPose(state,time);
+  climber.hidden=!state.atLadder||state.observatoryPhase==='viewing'||Boolean(walk);
+  telescope.hidden=state.observatoryPhase==='viewing';
+  if(!climber.hidden){
+   const actor=observatoryClimberPose(state.observatoryHeight);
+   const sprite=actor.onLadder?'sub'+(Math.floor(now/150)%2+1):actor.onStairs&&uprightSrc?'upright':'miner';
+   if(climber.dataset.pose!==sprite){
+    climber.src=sprite==='upright'?uprightSrc:new URL('../../assets/'+sprite+'.png',import.meta.url).href;
+    climber.dataset.pose=sprite;
+   }
+   climber.style.transform=islandTransform(actor.x,actor.y,actor.z)+' translate(-50%,-100%)';
+  }
   walker.hidden=!walk;
   world.classList.toggle('is-miner-walking',Boolean(walk));
   if(walk){
-   if(walkFrame!==walk.frame){
-    if(walkFrame>=0)walkFrames[walkFrame].hidden=true;
-    walkFrames[walk.frame].hidden=false;
-    walkFrame=walk.frame;
+   if(walkFrame!==walk.sprite){
+    if(walkFrame)walkFrames[walkFrame].hidden=true;
+    walkFrames[walk.sprite].hidden=false;
+    walkFrame=walk.sprite;
    }
+   const stairMix=walk.stairMix;
    const descent=1-walk.lift;
-   const x=`calc(${state.cameraX*CSS_WORLD_UNITS}px + var(--walk-pier-offset) * ${walk.pierProgress})`;
-   const y=`calc(var(--walk-descent) * ${descent})`;
-   walker.style.transform=`translate3d(${x},${y},${-15+52*descent}px)`;
+   const x=`calc(${walk.routeX*CSS_WORLD_UNITS}px + var(--walk-pier-offset) * ${walk.pierProgress} + var(--walk-stair-x) * ${stairMix})`;
+   const y=`calc(var(--walk-descent) * ${descent*(1-stairMix)} + var(--walk-stair-drop) * ${stairMix})`;
+   const stairDepth=CSS_ISLAND_DEPTH+OBSERVATORY.stairZ*CSS_WORLD_UNITS-CSS_MINER_DEPTH;
+   const z=(-15+52*descent)*(1-stairMix)+stairDepth*stairMix;
+   walker.style.transform=`translate3d(${x},${y},${z}px)`;
    walker.style.setProperty('--walk-facing',walk.direction);
+   walker.style.setProperty('--walk-stair-mix',stairMix);
+  }
+  const bubbleScale=uprightSrc?minerArrival(state,time):0;
+  if(curiosity){
+   curiosity.hidden=!bubbleScale||!state.atLadder||state.focused;
+   if(!curiosity.hidden){
+    const {x,y,z}=STAIR_BUBBLE;
+    curiosity.style.transform=islandTransform(x,y,z)+` translate(-50%,-50%) scale(${bubbleScale})`;
+   }
+  }
+  if(question){
+   question.hidden=!bubbleScale||state.atLadder||state.focused;
+   if(!question.hidden){
+    const miner=stageMiners[state.active];
+    if(question.parentElement!==miner)miner.appendChild(question);
+    question.style.transform=`scale(${bubbleScale})`;
+   }
   }
   state.focusMix+=((state.focused?1:0)-state.focusMix)*(state.reduceMotion?1:.09);
   updateFrost(state.cameraX,dt);
@@ -372,7 +420,7 @@ export function startCSS3D(){
    viewport.style.setProperty('--sky-x',`${innerWidth/2-longitude*skyWidth}px`);
    viewport.style.setProperty('--sky-y',`${Math.max(innerHeight-skyHeight,Math.min(0,innerHeight/2-(1-latitude)*skyHeight))}px`);
   }
-  if(state.entered&&STAGES[state.active].id==='fishing'){const anchor=stages[STAGES.length-1].querySelector('.fish-anchor');const rect=anchor.getBoundingClientRect();positionFishingHotspot(rect.x+rect.width/2,rect.y+rect.height/2)}
+  if(state.entered&&STAGES[state.active].id==='fishing'){const anchor=stages[STAGES.length-1].querySelector('.fish-anchor');const rect=anchor.getBoundingClientRect();positionFishingHotspot(rect.x+rect.width/2,rect.y+rect.height/2,{showCharacter:!walk})}
   requestAnimationFrame(cssFrame);
  }
  requestAnimationFrame(cssFrame);
