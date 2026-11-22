@@ -19,6 +19,33 @@ const bankHeight = {profile:1,projects:1.12,quests:1.18,badges:1};
 const islandTip=-10.7;
 export const TREEHOUSE_TOP=TREEHOUSE_BASE+9.95*TREEHOUSE_STRETCH;
 
+// Each strip narrows the west and east ends by a different amount. The flat
+// approach to the fishing pier is left inside the east shoreline.
+const shoreline=[
+ [-5.35,2.06,1.08],[-3.9,1.38,.74],[-2.46,.62,.53],[-.93,.19,.29],
+ [.68,0,0],[1.96,.28,0],[3.08,.67,0],[3.32,1.09,0],
+ [3.91,1.09,.42],[4.22,1.46,.76],[Infinity,2.02,1.35],
+];
+
+function shoreBlocks(block,wLimit,eLimit,relief,x,y,z,w,h,d,color,emissive){
+ if(x>=wLimit+2.06*relief&&x+w<=eLimit-1.35*relief){
+  block(x,y,z,w,h,d,color,emissive);
+  return;
+ }
+ const end=z+d;
+ let start=-Infinity;
+ for(const [stop,westInset,eastInset] of shoreline){
+  const near=Math.max(start,z),far=Math.min(stop,end);
+  if(far-near>1e-5){
+   const left=Math.max(x,wLimit+westInset*relief);
+   const right=Math.min(x+w,eLimit-eastInset*relief);
+   if(right-left>1e-5)block(left,y,near,right-left,h,far-near,color,emissive);
+  }
+  if(stop>=end)break;
+  start=stop;
+ }
+}
+
 // Each cut lists its left and right edges, setback from the shore, and depth.
 const terrain = {
  profile: {
@@ -75,7 +102,8 @@ function buildIslandFoundation(add) {
  ];
  for(const [index,[top,bottom,insetLeft,insetRight,back,front,color]] of strata.entries()){
   const left=westEdge+insetLeft,right=eastEdge-insetRight;
-  block(left,bottom,back,right-left,top-bottom,front-back,color);
+  const relief=Math.max(.28,1-index*.092);
+  shoreBlocks(block,left,right,relief,left,bottom,back,right-left,top-bottom,front-back,color);
   if(index===0)continue;
   // Most of the visible face is soil. Isolated pieces of shale show through.
   const plates=Math.max(1,Math.floor((right-left)/4.45));
@@ -85,10 +113,57 @@ function buildIslandFoundation(add) {
    const h=.33+((index*7+j*3)%5)*.12;
    const y=top-h-.06;
    const depth=.24+((j+index)%3)*.13;
-   block(x,y,front-.09,width*.7,h,depth,j%3===0?stone[1]:soil[1]);
-   if(index<=3&&(j+index)%3===0)block(x+width*.27,y+.09,front+depth-.05,.34,.13,.09,moss[1]);
-   if(index<5&&j%2===0)block(x+width*.09,y+.04,back-.18,width*.43,h*.67,.22,soil[0]);
+   shoreBlocks(block,left,right,relief,x,y,front-.09,width*.7,h,depth,j%3===0?stone[1]:soil[1]);
+   if(index<=3&&(j+index)%3===0)shoreBlocks(block,left,right,relief,x+width*.27,y+.09,front+depth-.05,.34,.13,.09,moss[1]);
+   if(index<5&&j%2===0)shoreBlocks(block,left,right,relief,x+width*.09,y+.04,back-.18,width*.43,h*.67,.22,soil[0]);
   }
+ }
+}
+
+function buildShoreDetail(stage,block){
+ // Short shelves continue into the soil at different heights, with roots
+ // wrapping around the rounded shoulders instead of tracing a straight frame.
+ if(stage==='profile'){
+  for(const [x,y,z,w,h,d,shade] of [
+   [-7.62,-.88,-4.12,1.36,.51,.82,1],[-8.04,-1.06,-2.86,1.15,.64,.99,2],
+   [-8.43,-.82,-1.71,.94,.62,.65,1],[-8.38,-1.35,-.49,1.09,.88,.97,0],
+   [-8.19,-1.37,.79,.98,.94,.92,1],[-7.88,-1.09,2.22,.79,.72,.66,1],
+   [-7.46,-1.17,3.17,.78,.74,.63,2],[-6.94,-1.13,4.09,.76,.67,.56,1],
+  ])block(x,y,z,w,h,d,soil[shade]);
+  for(const [x,y,z,w,h,d,c] of [
+   [-7.58,-.06,.62,.46,.27,1.18,bark[2]],[-8.09,-.26,.82,.67,.32,.71,bark[1]],
+   [-8.15,-.73,.88,.36,.65,.57,bark[2]],[-7.96,-1.07,1.06,.32,.44,.39,bark[1]],
+   [-7.42,-.06,2.36,.53,.22,.55,moss[1]],[-7.11,-.28,3.23,.46,.33,.37,moss[0]],
+  ])block(x,y,z,w,h,d,c);
+ }
+ if(stage==='badges'){
+  for(const [x,y,z,w,h,d,shade] of [
+   [6.67,-1.21,-6.72,.79,.84,.9,1],[7.17,-.94,-4.8,.72,.6,.76,2],
+   [7.48,-1.5,-3.17,.87,1.02,.63,1],[7.52,-.91,-1.66,.89,.63,.62,1],
+   [7.13,-1.06,3.46,.83,.72,.58,0],[6.54,-.82,4.3,.69,.51,.59,1],
+  ])block(x,y,z,w,h,d,soil[shade]);
+ }
+}
+
+function buildProfileRidge(block, back, front) {
+ const tiers = [[1, .17], [.76, .4], [.51, .69], [.24, 1]];
+ let start = back + .32;
+ for (const [stop, inset] of shoreline) {
+  const end = Math.min(stop, front - .16);
+  const depth = end - start;
+  const x = westEdge + inset + .045;
+  const rise = 1.5 * (1.22 - Math.abs((start + end) / 2 + .18) * .174);
+  let width = 1.66 - inset * .42;
+  // The bank drops before it reaches the miner's pedestal.
+  if (start < 3.45 && end > 1.15) width = Math.min(width, -7.02 - x);
+  let floor = -.14;
+  for (const [span, height] of tiers) {
+   const top = rise * height;
+   block(x, floor, start, width * span, top - floor, depth, soil[2]);
+   block(x, top, start + .028, width * span, .026, depth - .056, moss[0]);
+   floor = top;
+  }
+  start = end;
  }
 }
 
@@ -100,43 +175,45 @@ export function buildStageIsland(stage, add) {
  const left = stage === 'profile' ? westEdge : -6.75;
  const right = stage === 'badges' ? 8.2 : 6.75;
  const width = right - left;
+ const rimBlock=(x,y,z,w,h,d,c)=>{
+  if(stage==='profile'||stage==='badges'){
+   shoreBlocks(block,stage==='profile'?left:-Infinity,stage==='badges'?right:Infinity,y<-.5 ? .88 : 1,x,y,z,w,h,d,c);
+  }else block(x,y,z,w,h,d,c);
+ };
 
  // The rim sits on the common rock mass and breaks at each ravine.
- block(left + .14, -1.81, back + .12, width - .28, 1.31, bank - back - .12, soil[1]);
- block(left, -.54, back, width, .44, bank - back, soil[2]);
+ rimBlock(left + .14, -1.81, back + .12, width - .28, 1.31, bank - back - .12, soil[1]);
+ rimBlock(left, -.54, back, width, .44, bank - back, soil[2]);
  for (const [start, end] of [[left, cutLeft], [cutRight, right]]) {
-  block(start + .22, -2.18, bank - .37, end - start - .4, 1.68, cutDepth + .09, soil[0]);
-  block(start, -.54, bank, end - start, .44, cutDepth, soil[2]);
-  block(start+.05, -.23, front-.32, end-start-.1, .24, .39, moss[0]);
-  block(start+.38, -.04, front-.46, (end-start)*.51, .11, .29, moss[1]);
+  rimBlock(start + .22, -2.18, bank - .37, end - start - .4, 1.68, cutDepth + .09, soil[0]);
+  rimBlock(start, -.54, bank, end - start, .44, cutDepth, soil[2]);
+  rimBlock(start+.05, -.23, front-.32, end-start-.1, .24, .39, moss[0]);
+  rimBlock(start+.38, -.04, front-.46, (end-start)*.51, .11, .29, moss[1]);
  }
- block(left+.28, -.33, back+.02, width-.56, .48, .58, moss[0]);
- if(stage==='profile')block(left-.12,-1.36,back+.48,.61,1.48,front-back-1.01,stone[2]);
- if(stage==='badges'){
-  // Leave a break in the rim for the pier, between the two end caps.
-  block(right-.51,-1.31,back+.41,.59,1.42,-.73-back,stone[2]);
-  block(right-.51,-1.31,3.38,.59,1.42,front-3.38,stone[2]);
- }
+ rimBlock(left+.28, -.33, back+.02, width-.56, .48, .58, moss[0]);
+ buildShoreDetail(stage,block);
+ if (stage === 'profile') buildProfileRidge(block, back, front);
  block(cutLeft, -drop - .92, bank - .12, cutRight - cutLeft, .82, cutDepth - .12, soil[0]);
  block(cutLeft + .2, -drop - .1, bank, cutRight - cutLeft - .4, .13, cutDepth - .4, moss[0]);
 
  // Split coats at the cut so moss and paving follow the actual rock surface.
- const surface = (x, y, z, w, h, d, color) => {
+ const pave = (paint,x,y,z,w,h,d,color)=>{
   const end = x + w;
-  if (z < bank) block(x, y, z, w, h, Math.min(d, bank - z), color);
+  if (z < bank) paint(x, y, z, w, h, Math.min(d, bank - z), color);
   if (z + d <= bank) return;
   const frontZ = Math.max(z, bank);
   for (const [start, stop, offset] of [[left, cutLeft, 0], [cutLeft, cutRight, -drop], [cutRight, right, 0]]) {
    const from = Math.max(x, start), to = Math.min(end, stop);
-   if (to > from) block(from, y + offset, frontZ, to - from, h, z + d - frontZ, color);
+   if (to > from) paint(from, y + offset, frontZ, to - from, h, z + d - frontZ, color);
   }
  };
+ const surface=(...args)=>pave(rimBlock,...args);
  surface(left + .12, -.12, back+.46, width-.24, .16, front-back-.55, moss[0]);
  surface(left + 1.21, .035, -2.93, width - 2.46, .026, 5.7, soil[2]);
  surface(left + 3.18, -.12, 2.77, width - 6.2, .17, .86, moss[1]);
  for (const [x, drop, w] of [[left + 1.05, .45, .74], [-2.21, 1.04, .92], [1.38, .49, .65], [4.11, .43, 1.08]]) {
   const atBank = x + w > cutLeft && x < cutRight;
-  block(x, -drop, atBank ? bank : front, w, .22, .11, stone[3]);
+  rimBlock(x, -drop, atBank ? bank : front, w, .22, .11, stone[3]);
  }
  for (const [x, z, w, d, shade] of turf) {
   surface(x, -.12, z, w, .19, d, moss[shade]);
@@ -158,7 +235,7 @@ export function buildStageIsland(stage, add) {
  if (stage === 'profile') buildExposedRoots(block);
  if (stage === 'quests') buildQuestGrove(tallBlock);
  if (stage === 'badges') {
-  buildTreehouse(block, surface);
+  buildTreehouse(block,(...args)=>pave(block,...args));
   const badgeX=OBSERVATORY.rightStage*STEP;
   buildRooftopStructure((x,y,z,w,h,d,color)=>add(x-badgeX,y,z,w,h,d,color));
  }
@@ -198,31 +275,17 @@ const woodland = {
 };
 
 function buildWoodland(stage,block,surface){
- for(const [tree,[x,z,base,height,span]] of woodland[stage].entries()){
+ for(const [x,z,base,height,span] of woodland[stage]){
   const radius=span*.31;
-  const crown=base+height*.69;
   block(x-.54,base,z-.43,1.04,height*.41,.92,bark[2]);
   block(x-.39,base+height*.4,z-.49,.79,height*.32,.76,bark[1]);
   block(x-.21,base+height*.70,z-.56,.54,height*.23,.64,bark[2]);
-  block(x-.63,base+.24,z+.4,.26,height*.29,.14,bark[3]);
   block(x-.94,base-.11,z-.36,1.76,.45,1.22,bark[1]);
   block(x-.38,base-.06,z+.53,.72,.27,.84,bark[2]);
   block(x-radius,base+height*.49,z-.46,radius+.28,.55,.63,bark[2]);
   block(x-radius-.11,base+height*.53,z-.49,.55,height*.22,.67,bark[1]);
   block(x+.2,base+height*.6,z-.67,radius,.58,.59,bark[2]);
   block(x+radius-.21,base+height*.62,z-.72,.57,height*.17,.64,bark[1]);
-  const crownPieces=[
-   [-.45,0,-.32,.9,.12,.79,0],[-.6,.07,-.26,.52,.1,.64,1],
-   [.07,.08,-.28,.48,.11,.69,1],[-.38,.12,-.5,.77,.13,.9,1],
-   [-.46,.17,-.28,.48,.1,.58,2],[.02,.2,-.52,.47,.09,.67,2],
-   [-.24,.25,-.44,.54,.07,.57,3],[-.11,.29,-.29,.29,.035,.32,3],
-   [-.38,.14,.36,.29,.065,.16,2],[.23,.1,.28,.28,.075,.19,2],
-  ];
-  for(const [dx,dy,dz,w,h,d,shade] of crownPieces){
-   const mirroredX=tree%2?-dx-w:dx;
-   const rise=shade>1?(tree-1)*.027:0;
-   block(x+mirroredX*span,crown+(dy+rise)*height,z+dz*span,w*span,h*height,d*span,leaves[shade]);
-  }
  }
 
  // Ferns and leafy banks occupy the spaces between the tall trunks and lamps.
@@ -308,7 +371,6 @@ function buildTerraces(stage, block) {
   block(5.45, 1.93, -3.67, .69, 1.3, .52, bark[2]);
   block(5.58, 3.15, -4.46, .84, .39, 1.21, bark[3]);
   block(5.62, 3.46, -5.31, .71, .52, 1.12, bark[2]);
-  block(5.18, 3.86, -5.37, 1.34, .36, 1.12, leaves[1]);
   return;
  }
 
@@ -324,10 +386,7 @@ function buildTerraces(stage, block) {
    [5.09, 1.52, -3.91, 1.41, 1.52, 1.28, bark[2]],
   ]) block(x, y, z, w, h, d, c);
   block(5.3, 3.91, -5.54, 1.11, .93, 1.18, bark[2]);
-  block(4.76, 4.65, -5.36, 1.86, .49, 1.08, leaves[1]);
-  block(5.05, 5.05, -5.21, 1.44, .37, .88, leaves[2]);
   block(-5.91, 2.91, -3.97, .99, .48, 1.47, bark[3]);
-  block(-6.23, 3.27, -3.6, 1.52, .34, .91, leaves[2]);
  }
 }
 
@@ -338,8 +397,6 @@ function buildQuestGrove(block) {
   [-6.23, -.14, -4.37, 2.5, .41, 1.3, bark[1]], [-5.65, .13, -4.62, 1.79, 1.35, 1.53, bark[2]],
   [-5.42, 1.48, -4.76, 1.37, 1.42, 1.26, bark[1]], [-5.21, 2.9, -4.82, 1.23, 1.27, 1.18, bark[2]],
   [-4.44, 3.34, -4.83, 1.7, .64, .96, bark[2]], [-3.54, 3.92, -4.98, 1.37, .53, .82, bark[3]],
-  [-6.11, 3.9, -5.34, 2.05, .89, 1.83, leaves[1]], [-5.59, 4.65, -5.43, 2.19, .61, 1.65, leaves[2]],
-  [-4.05, 4.2, -5.5, 2.4, .61, 1.59, leaves[1]], [-3.81, 4.78, -5.37, 1.22, .47, 1.29, leaves[3]],
  ]) block(x, y + ledge, z, w, h, d, c);
  for (const [x, y, z, w, h, d, c] of [
   [-5.34, 1.88, -3.31, 1.55, .8, 1.64, bark[2]], [-4.87, .94, -1.78, 1.23, 1.11, 1.49, bark[2]],
@@ -348,6 +405,36 @@ function buildQuestGrove(block) {
   [-2.32, 2.74, -5.12, 3.64, .37, .77, bark[1]], [.82, 1.23, -4.68, 1.47, 1.66, .83, bark[2]],
   [1.88, -.14, -4.88, 2.15, .44, 1.03, bark[1]], [3.75, -.14, -5.11, 3, .37, .71, bark[2]],
  ]) block(x, y, z, w, h, d, c);
+}
+
+export function islandTreePlanes(){
+ const trees=[];
+ for(const [index,stage] of STAGES.entries()){
+  if(stage.id==='fishing')continue;
+  const id=stage.id,back=terrain[id].back;
+  const add=(kind,x,y,z,width,height,tone,variant,yaw=0)=>{
+   trees.push({kind,x:index*STEP+x,y,z,width,height,tone,variant,yaw});
+  };
+  // Stack pale far silhouettes behind darker woods. Their feet stay on the island.
+  add('grove',-.76,4.45,back+.12,11.9,8.9,'far',index%3);
+  add('grove',1.51,3.54,back+.57,8.4,7.08,'middle',(index+2)%3);
+  for(const [tree,[x,z,floor,height,span]] of woodland[id].entries()){
+   const variant=(tree+index)%3,kind=tree===1?'pine':'crown';
+   const y=floor+height*(kind==='pine' ? .60 : .845);
+   const h=height*(kind==='pine' ? .95 : .38);
+   const w=span*(kind==='pine' ? .78 : 1.2);
+   add(kind,x-.19,y+.12,z-.5,w*.99,h*.97,'middle',(variant+1)%3);
+   add(kind,x+.12,y,z+.48,w,h,'near',variant);
+   add(kind,x,y-.09,z-.13,w*.83,h*.91,'near',(variant+2)%3,tree%2===0 ? .92 : -1.01);
+  }
+  if(id==='profile')add('crown',5.98,4.12,-5.08,2.3,1.28,'near',2,.18);
+  if(id==='projects'){
+   add('crown',5.52,5.47,-5.0,2.6,1.65,'near',0,.13);
+   add('crown',-5.62,3.86,-3.31,2.4,1.39,'near',1,-.21);
+  }
+  if(id==='quests')add('crown',-4.74,8.02,-4.21,3.94,2.36,'near',2,.2);
+ }
+ return trees;
 }
 
 function buildTreehouse(ground, surface) {

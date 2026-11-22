@@ -18,7 +18,8 @@ import {createNotebookMesh,NOTEBOOK_LABEL} from '../graphic/notebook.js';
 import {drawObservatory,updateObservatory} from './observatory.js';
 import {isObservatoryApproach} from './observatory-layout.js';
 import {syncObservatoryUI,positionObservatoryHotspots} from '../ui/observatory.js';
-import {buildIslandLandscape} from './island-landscape.js';
+import {buildIslandLandscape,islandTreePlanes} from './island-landscape.js';
+import {createIslandTreeAtlas} from './island-trees.js';
 import {FRUIT_GLOW,collectFruitShadows,createFruitGlow,fruitLights,islandFaceLight,rasterIslandFace} from './island-lighting.js';
 import {createFrostSprite,frostFlakes,frostPose,showIslandFrost} from './island-frost.js';
 
@@ -30,7 +31,7 @@ export function startWebGL(state,onPageChange){
  if(!gl||!isNativeHTMLCanvasAvailable(glCanvas,gl))return null;
  let program,cubeMesh,planeMesh,terrainMesh,loc={},whiteTex,minerTex,climbTextures=[null,null],titleTextures=[],htmlBoards=null;
  let lastTs=0,introZoom=30,running=true,sky=null,background=null,planetarium=null,graphicTex=null,graphicMesh=null;
- let fruitGlowTex,frostTex,frostMesh,frostTime=0;
+ let fruitGlowTex,frostTex,frostMesh,treeTex,treeMesh,frostTime=0;
  const spritePlane=makePlane();
  const frostData=new Float32Array(frostFlakes.length*spritePlane.length),frostPosition=new Float32Array(4);
  const propShadows=new Map();
@@ -53,6 +54,12 @@ export function startWebGL(state,onPageChange){
   const white=document.createElement('canvas');white.width=white.height=2;const c=white.getContext('2d');c.fillStyle='white';c.fillRect(0,0,2,2);whiteTex=texFromCanvas(white);
   gl.enable(gl.DEPTH_TEST);gl.depthFunc(gl.LEQUAL);gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.uniform1i(loc.uTex,0);
   terrainMesh=mesh(buildTerrain());
+  const trees=islandTreePlanes();
+  const treeAtlas=createIslandTreeAtlas(trees);
+  treeTex=texFromCanvas(treeAtlas.canvas);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+  treeMesh=mesh(buildTreePlanes(trees,treeAtlas));
   fruitGlowTex=texFromCanvas(createFruitGlow());
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
@@ -127,6 +134,20 @@ function buildTerrain(){
  }
  return vertices;
 }
+function buildTreePlanes(trees,atlas){
+ const vertices=[];
+ const {width,height}=atlas.canvas;
+ for(const tree of trees){
+  const frame=atlas.frame(tree),sin=Math.sin(tree.yaw),cos=Math.cos(tree.yaw);
+  for(let k=0;k<spritePlane.length;k+=11){
+   const u=spritePlane[k]*tree.width,v=spritePlane[k+1]*tree.height;
+   const tx=(frame.x+.01+spritePlane[k+6]*(frame.width-.02))/width;
+   const ty=1-(frame.y+.01+(1-spritePlane[k+7])*(frame.height-.02))/height;
+   vertices.push(tree.x+cos*u,tree.y+v,tree.z-sin*u,sin,0,cos,tx,ty,1,1,1);
+  }
+ }
+ return vertices;
+}
 function draw(mesh_,model,color='#fff',tex=whiteTex,unlit=0,fog=1){gl.bindBuffer(gl.ARRAY_BUFFER,mesh_.buffer);const stride=44;for(const [name,size,offs] of [['aPos',3,0],['aNorm',3,12],['aUv',2,24],['aCol',3,32]]){const l=loc[name];gl.enableVertexAttribArray(l);gl.vertexAttribPointer(l,size,gl.FLOAT,false,stride,offs)}gl.uniformMatrix4fv(loc.uModel,false,model);const v=hex(color);gl.uniform4f(loc.uColor,v[0],v[1],v[2],1);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex||whiteTex);gl.uniform1f(loc.uUseTex,tex&&tex!==whiteTex?1:0);gl.uniform1f(loc.uUnlit,unlit);gl.uniform1f(loc.uFog,fog);gl.drawArrays(gl.TRIANGLES,0,mesh_.count)}
 function box(x,y,z,sx,sy,sz,color,ry=0,rx=0,rz=0){draw(cubeMesh,M.model(x,y,z,sx,sy,sz,ry,rx,rz),color)}
 function quad(x,y,z,w,h,color,tex,ry=0,rx=0,rz=0){draw(planeMesh,M.model(x,y,z,w,h,1,ry,rx,rz),color,tex,1,0)}
@@ -175,8 +196,9 @@ function drawForestEffects(cameraX,dt){
  gl.depthMask(true);
 }
 function destroyForestEffects(){
- for(const texture of [fruitGlowTex,frostTex])if(texture)gl.deleteTexture(texture);
+ for(const texture of [fruitGlowTex,frostTex,treeTex])if(texture)gl.deleteTexture(texture);
  if(frostMesh)gl.deleteBuffer(frostMesh.buffer);
+ if(treeMesh)gl.deleteBuffer(treeMesh.buffer);
 }
 function board(i,t){const x=i*STEP,hover=Math.sin(t*1.4+i*.65)*.055,rot=.03*Math.sin(t*.45+i),z=-1.55;
  // cast shadow, mechanical depth and stepped rear shell
@@ -250,6 +272,7 @@ function drawStageProps(i,t){const box=sceneryBox,x=i*STEP,fx=x+5.5,stage=STAGES
    return;
   }
   draw(terrainMesh,M.id(),'#ffffff',whiteTex,1);
+  draw(treeMesh,M.id(),'#ffffff',treeTex,1);
   drawObservatory({box:sceneryBox,quad},minerTex,climbTextures,t);
   positionObservatoryHotspots(pos=>{
    const w=vWorld[3]*pos[0]+vWorld[7]*pos[1]+vWorld[11]*pos[2]+vWorld[15];

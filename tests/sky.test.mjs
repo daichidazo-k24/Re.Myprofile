@@ -120,17 +120,18 @@ test('one static star batch for every stage, with the meteor handled by the back
  const gl=fakeGL(),bridge=createMiningSkyBridge(),sky=createSkyRenderer(gl,bridge),vp=M.id();
  assert.equal(bridge.available,true);assert.equal(gl.uploads.length,1);
  const state={active:0,entered:true,reduceMotion:false};
+ const framesPerStage=60,stageDraws=STAGES.length*framesPerStage;
  for(let stage=0;stage<STAGES.length;stage++){
   state.active=stage;
-  for(let i=0;i<60;i++)sky.draw(vp,state,2+i/60,1/60,1440,900,900);
+  for(let i=0;i<framesPerStage;i++)sky.draw(vp,state,2+i/framesPerStage,1/framesPerStage,1440,900,900);
  }
- assert.equal(gl.draws.length,360,'no stage-specific geometry or connecting lines');
+ assert.equal(gl.draws.length,stageDraws,'no stage-specific geometry or connecting lines');
  assert.equal(gl.uploads.length,1,'no geometry transfer after initialization');
  assert.ok(gl.draws.every(d=>d.count===SKY_STAR_COUNT*6&&d.uOffsetX===0),'sky stays fixed in world space');
  state.reduceMotion=true;sky.draw(vp,state,9.5,.016,1440,900,900);
- assert.equal(gl.draws.length,361,'no meteor under reduced motion');
+ assert.equal(gl.draws.length,stageDraws+1,'no meteor under reduced motion');
  assert.equal(gl.draws.at(-1).uMotion,0);assert.equal(gl.draws.at(-1).uTime,0);assert.equal(gl.draws.at(-1).uOpacity,1);
- state.reduceMotion=false;sky.draw(vp,state,9.6,.016,1440,900,900);assert.equal(gl.draws.length,362,'star renderer submits only its static star batch');
+ state.reduceMotion=false;sky.draw(vp,state,9.6,.016,1440,900,900);assert.equal(gl.draws.length,stageDraws+2,'star renderer submits only its static star batch');
  assert.equal(gl.depthWrite,true);assert.equal(gl.enabled.size,0);
  sky.destroy();assert.equal(bridge.available,false);assert.equal(gl.deleted.length,1);
 });

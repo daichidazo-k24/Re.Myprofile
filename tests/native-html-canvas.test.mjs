@@ -38,17 +38,18 @@ test('paint and scroll trigger uploads; changing camera geometry does NOT reuplo
  globalThis.DOMMatrix=class{constructor(a){this.matrix=a}};
  try{
   const boards=createNativeBoardTextures(gl,canvas);
-  assert.equal(children.length,5);
+  assert.equal(children.length,BOARD_COUNT);
   assert.ok(children.every(n=>n.getAttribute===undefined||n.scrollHeight>n.clientHeight));
-  boards.uploadPending(2);boards.uploadPending(2);boards.uploadPending(2);
-  assert.equal(gl.uploads,5);assert.equal(boards.stats.uploadedBytes,5*960*560*4);
-  boards.uploadPending(5);assert.equal(gl.uploads,5,'idle world does not reupload');
+  for(let i=0;i<BOARD_COUNT;i+=2)boards.uploadPending(2);
+  assert.equal(gl.uploads,BOARD_COUNT);assert.equal(boards.stats.uploadedBytes,BOARD_COUNT*960*560*4);
+  boards.uploadPending(BOARD_COUNT);assert.equal(gl.uploads,BOARD_COUNT,'idle world does not reupload');
   const matrix=[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
   boards.syncGeometry(0,matrix,matrix);
-  boards.uploadPending(5);assert.equal(gl.uploads,5,'orbit does not reupload');
+  boards.uploadPending(BOARD_COUNT);assert.equal(gl.uploads,BOARD_COUNT,'orbit does not reupload');
   listeners.paint({changedElements:[children[0]]});
-  boards.uploadPending(5);assert.equal(gl.uploads,6,'changed document uploads just once');
-  children[2].listeners.scroll();boards.uploadPending(5);assert.equal(gl.uploads,7,'scroll uploads only active texture');
+  boards.uploadPending(BOARD_COUNT);assert.equal(gl.uploads,BOARD_COUNT+1,'changed document uploads just once');
+  children.at(-1).listeners.scroll();
+  boards.uploadPending(BOARD_COUNT);assert.equal(gl.uploads,BOARD_COUNT+2,'scroll uploads only the changed texture');
   boards.destroy();assert.equal(Object.keys(listeners).length,0);
  }finally{globalThis.document=prior;globalThis.DOMMatrix=priorDOM;globalThis.innerWidth=priorWidth;globalThis.innerHeight=priorHeight;}
 });

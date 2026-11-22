@@ -1,5 +1,4 @@
 /** Deterministic sky data and timing; no DOM, textures or renderer dependencies. */
-import {STAGES,STEP} from '../data/stages.js';
 import {seeded} from './math.js';
 
 export const MINING_STAR_COUNT=24;
@@ -11,7 +10,9 @@ export const clamp01=n=>Math.max(0,Math.min(1,n));
 export const smooth01=n=>{const t=clamp01(n);return t*t*(3-2*t)};
 
 export function createSkyStars(){
- const columns=24,rows=SKY_STAR_COUNT/columns,left=-25,span=(STAGES.length-1)*STEP+50;
+ const columns=24,rows=SKY_STAR_COUNT/columns;
+ // Keep the original world-space spread even when the island's stage list changes.
+ const left=-25,right=92.5,span=right-left;
  return Array.from({length:SKY_STAR_COUNT},(_,i)=>({
   // Jittered cells cover the whole world, including both sides of the end stages.
   // Keep the mined stars' original depth range, behind every whiteboard.

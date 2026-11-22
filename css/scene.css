@@ -19,6 +19,12 @@
 .island-frost,.island-frost>img{position:absolute;left:0;top:0;pointer-events:none}
 .island-frost{transform-style:preserve-3d}
 .island-frost>img{image-rendering:pixelated}
+.island-trees,.island-tree-silhouette{position:absolute;left:0;top:0;pointer-events:none}
+.island-trees{transform-style:preserve-3d}
+.island-tree-silhouette{
+ transform-origin:0 0;image-rendering:pixelated;
+ background-image:var(--island-tree-atlas);background-repeat:no-repeat;
+}
 
 
 

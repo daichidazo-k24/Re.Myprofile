@@ -16,7 +16,8 @@ import {STAIR_HOTSPOT,TELESCOPE_POSITION,buildRooftopTelescope,observatoryCamera
 import {syncObservatoryUI,positionObservatoryHotspots} from '../ui/observatory.js';
 import {worldCameraPose,telescopeFov,cssTelescopeView} from '../ui/orbit-camera.js';
 import {WORLD_CAMERA} from './camera-settings.js';
-import {TREEHOUSE_TOP,buildIslandLandscape} from './island-landscape.js';
+import {TREEHOUSE_TOP,buildIslandLandscape,islandTreePlanes} from './island-landscape.js';
+import {createIslandTreeAtlas} from './island-trees.js';
 import {FRUIT_GLOW,collectFruitShadows,createFruitGlow,fruitLights,islandFaceLight,rasterIslandFace} from './island-lighting.js';
 import {createFrostSprite,frostFlakes,frostPose,showIslandFrost} from './island-frost.js';
 import {hex} from './math.js';
@@ -36,6 +37,27 @@ const ISLAND_FACES=[
 
 function islandTransform(x,y,z){
  return `translate3d(${x*CSS_WORLD_UNITS}px,${CSS_ISLAND_GROUND-y*CSS_ISLAND_VERTICAL_UNIT}px,${CSS_ISLAND_DEPTH+z*CSS_WORLD_UNITS}px)`;
+}
+
+function createTreeLayer(){
+ const trees=islandTreePlanes(),atlas=createIslandTreeAtlas(trees);
+ const {width,height}=atlas.canvas;
+ const layer=document.createElement('div');
+ layer.className='island-trees';
+ layer.setAttribute('aria-hidden','true');
+ layer.style.setProperty('--island-tree-atlas',`url("${atlas.canvas.toDataURL()}")`);
+ for(const tree of trees){
+  const frame=atlas.frame(tree);
+  const plane=document.createElement('div');
+  plane.className='island-tree-silhouette';
+  plane.style.width=`${tree.width*CSS_WORLD_UNITS}px`;
+  plane.style.height=`${tree.height*CSS_ISLAND_VERTICAL_UNIT}px`;
+  plane.style.backgroundSize=`${width/frame.width*100}% ${height/frame.height*100}%`;
+  plane.style.backgroundPosition=`${frame.x/(width-frame.width)*100}% ${frame.y/(height-frame.height)*100}%`;
+  plane.style.transform=islandTransform(tree.x,tree.y,tree.z)+` rotateY(${tree.yaw}rad) translate(-50%,-50%)`;
+  layer.appendChild(plane);
+ }
+ return layer;
 }
 
 function createFrostLayer(world){
@@ -209,7 +231,7 @@ export function startCSS3D(){
   });
  });
  const telescope=createCubeGroup(buildRooftopTelescope);
- world.prepend(createCubeGroup(buildIslandLandscape),telescope);
+ world.prepend(createCubeGroup(buildIslandLandscape),createTreeLayer(),telescope);
  const fruitGlowSrc=createFruitGlow().toDataURL();
  for(const [x,y,z] of fruitLights){
   const glow=document.createElement('img');
